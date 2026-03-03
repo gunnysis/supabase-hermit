@@ -2,12 +2,13 @@
 # db.sh — Supabase DB 관리 래퍼 (토큰 자동 로드)
 #
 # 사용법:
-#   bash scripts/db.sh push              # migration 적용
-#   bash scripts/db.sh push --dry-run    # dry-run
+#   bash scripts/db.sh push              # migration 적용 → 자동 gen-types + sync
+#   bash scripts/db.sh push --dry-run    # dry-run (gen-types/sync 안 함)
 #   bash scripts/db.sh pull              # remote → local diff
 #   bash scripts/db.sh diff              # remote 스키마 diff
 #   bash scripts/db.sh lint              # RLS/스키마 린트
 #   bash scripts/db.sh status            # migration 상태 확인
+#   bash scripts/db.sh gen-types         # DB 타입 생성
 
 set -euo pipefail
 
@@ -28,13 +29,25 @@ fi
 CMD="${1:-status}"
 shift 2>/dev/null || true
 
+# dry-run 여부 확인 (push에서 사용)
+IS_DRY_RUN=false
+for arg in "$@"; do
+  [ "$arg" = "--dry-run" ] && IS_DRY_RUN=true
+done
+
 case "$CMD" in
   push)
     echo "=== db push ==="
     npx supabase db push --linked "$@"
-    echo ""
-    echo "✅ 적용 완료. sync 실행:"
-    echo "   bash scripts/sync-to-projects.sh"
+
+    # dry-run이 아닌 경우에만 자동 gen-types + sync
+    if ! $IS_DRY_RUN; then
+      echo ""
+      echo "=== 자동 후처리: gen-types → sync ==="
+      bash "$CENTRAL/scripts/gen-types.sh"
+      echo ""
+      bash "$CENTRAL/scripts/sync-to-projects.sh"
+    fi
     ;;
   pull)
     echo "=== db pull (schema diff → new migration) ==="
@@ -47,6 +60,9 @@ case "$CMD" in
   lint)
     echo "=== db lint ==="
     npx supabase db lint --linked "$@"
+    ;;
+  gen-types)
+    bash "$CENTRAL/scripts/gen-types.sh"
     ;;
   status)
     echo "=== migration status ==="
@@ -61,7 +77,7 @@ case "$CMD" in
     npx supabase db push --linked --dry-run 2>&1
     ;;
   *)
-    echo "사용법: bash scripts/db.sh {push|pull|diff|lint|status}"
+    echo "사용법: bash scripts/db.sh {push|pull|diff|lint|status|gen-types}"
     exit 1
     ;;
 esac

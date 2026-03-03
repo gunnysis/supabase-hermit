@@ -75,10 +75,16 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
 BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
   UPDATE posts
   SET deleted_at = now(), updated_at = now()
-  WHERE id = p_post_id AND author_id = auth.uid() AND deleted_at IS NULL;
+  WHERE id = p_post_id AND author_id = v_user_id AND deleted_at IS NULL;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Cannot delete post: not found, not authorized, or already deleted';
@@ -91,10 +97,16 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
 BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
   UPDATE comments
   SET deleted_at = now(), updated_at = now()
-  WHERE id = p_comment_id AND author_id = auth.uid() AND deleted_at IS NULL;
+  WHERE id = p_comment_id AND author_id = v_user_id AND deleted_at IS NULL;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Cannot delete comment: not found, not authorized, or already deleted';

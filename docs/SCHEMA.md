@@ -1,0 +1,475 @@
+# DB 스키마 문서 — 은둔마을
+
+> 최종 업데이트: 2026-03-03
+> 마이그레이션 6개 적용 완료
+
+---
+
+## 테이블
+
+### `groups`
+그룹. 사용자들이 모이는 커뮤니티 단위.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `name` | TEXT | NOT NULL | 그룹명 (최대 100자) |
+| `description` | TEXT | nullable | 그룹 설명 (최대 1000자) |
+| `owner_id` | UUID | FK -> auth.users | 그룹 소유자 |
+| `join_mode` | TEXT | `'invite_only'` | 가입 방식 |
+| `invite_code` | TEXT | nullable, UNIQUE | 초대 코드 |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+| `updated_at` | TIMESTAMPTZ | `now()` | 자동 갱신 (트리거) |
+
+**join_mode 값**: `invite_only`, `request_approve`, `code_join`
+
+---
+
+### `boards`
+게시판. 그룹에 소속되거나 독립적으로 존재.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `name` | TEXT | NOT NULL | 게시판명 |
+| `description` | TEXT | nullable | |
+| `visibility` | TEXT | `'public'` | 공개 여부 |
+| `anon_mode` | TEXT | `'allow_choice'` | 익명 정책 |
+| `group_id` | BIGINT | FK -> groups, ON DELETE CASCADE | 소속 그룹 (null이면 공개 게시판) |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+| `updated_at` | TIMESTAMPTZ | `now()` | 자동 갱신 (트리거) |
+
+**visibility 값**: `public`, `private`
+**anon_mode 값**: `always_anon`, `allow_choice`, `require_name`
+
+---
+
+### `group_members`
+그룹 멤버십. 복합 PK (group_id, user_id).
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGINT | GENERATED ALWAYS AS IDENTITY, UNIQUE | 대리 키 (posts.member_id FK용) |
+| `group_id` | BIGINT | PK, FK -> groups, ON DELETE CASCADE | |
+| `user_id` | UUID | PK, FK -> auth.users, ON DELETE CASCADE | |
+| `role` | TEXT | `'member'` | 역할 |
+| `status` | TEXT | `'approved'` | 상태 |
+| `nickname` | TEXT | nullable | 그룹 내 닉네임 |
+| `joined_at` | TIMESTAMPTZ | `now()` | |
+| `left_at` | TIMESTAMPTZ | nullable | 탈퇴 시각 |
+
+**role 값**: `owner`, `member`, `moderator`
+**status 값**: `pending`, `approved`, `rejected`, `left`
+
+---
+
+### `posts`
+게시글. 소프트삭제 지원 (`deleted_at`).
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `title` | TEXT | NOT NULL | 제목 (최대 200자) |
+| `content` | TEXT | NOT NULL | 본문 (최대 100,000자) |
+| `author` | TEXT | NOT NULL | 작성자명 |
+| `author_id` | UUID | NOT NULL, FK -> auth.users | |
+| `board_id` | BIGINT | FK -> boards, ON DELETE SET NULL | 게시판 |
+| `group_id` | BIGINT | FK -> groups, ON DELETE SET NULL | 그룹 |
+| `member_id` | BIGINT | FK -> group_members(id), ON DELETE SET NULL | 그룹 멤버 참조 |
+| `is_anonymous` | BOOLEAN | `true` | 익명 여부 |
+| `display_name` | TEXT | `'익명'` | 표시 이름 |
+| `image_url` | TEXT | nullable | 첨부 이미지 URL |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+| `updated_at` | TIMESTAMPTZ | `now()` | 자동 갱신 (트리거) |
+| `deleted_at` | TIMESTAMPTZ | nullable | 소프트삭제 시각 |
+
+---
+
+### `comments`
+댓글. 소프트삭제 지원 (`deleted_at`).
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE | 소속 게시글 |
+| `content` | TEXT | NOT NULL | 댓글 내용 (최대 5,000자) |
+| `author` | TEXT | NOT NULL | 작성자명 |
+| `author_id` | UUID | NOT NULL, FK -> auth.users | |
+| `board_id` | BIGINT | FK -> boards, ON DELETE SET NULL | |
+| `group_id` | BIGINT | FK -> groups, ON DELETE SET NULL | |
+| `is_anonymous` | BOOLEAN | `true` | |
+| `display_name` | TEXT | `'익명'` | |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+| `updated_at` | TIMESTAMPTZ | `now()` | 자동 갱신 (트리거) |
+| `deleted_at` | TIMESTAMPTZ | nullable | 소프트삭제 시각 |
+
+---
+
+### `reactions`
+리액션 집계 테이블. **직접 쓰기 금지** — `toggle_reaction()` RPC 사용.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE | |
+| `reaction_type` | TEXT | NOT NULL | 리액션 종류 |
+| `count` | INT | `0` | 집계 수 |
+
+**UNIQUE**: (post_id, reaction_type)
+
+---
+
+### `user_reactions`
+사용자별 리액션 기록. **직접 쓰기 금지** — `toggle_reaction()` RPC 사용.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `user_id` | UUID | NOT NULL, FK -> auth.users, ON DELETE CASCADE | |
+| `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE | |
+| `reaction_type` | TEXT | NOT NULL | |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+
+**UNIQUE**: (user_id, post_id, reaction_type)
+
+---
+
+### `post_analysis`
+AI 감정 분석 결과. 게시글 INSERT시 DB Webhook으로 자동 생성.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE, UNIQUE | |
+| `emotions` | TEXT[] | `'{}'` | 감정 태그 배열 |
+| `analyzed_at` | TIMESTAMPTZ | `now()` | 분석 시각 |
+
+---
+
+### `app_admin`
+앱 관리자 목록. 게시판/그룹 생성 권한 제어.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `user_id` | UUID | PK, FK -> auth.users, ON DELETE CASCADE | |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+
+---
+
+## 뷰
+
+### `posts_with_like_count`
+게시글에 좋아요수, 댓글수, 감정 정보를 결합한 뷰. `security_invoker = true`.
+
+```sql
+SELECT
+  p.*,
+  SUM(r.count)::integer AS like_count,
+  COUNT(comments)::integer AS comment_count,
+  pa.emotions
+FROM posts p
+LEFT JOIN post_analysis pa ON pa.post_id = p.id
+WHERE p.deleted_at IS NULL;
+```
+
+---
+
+## RPC 함수
+
+### `toggle_reaction(p_post_id BIGINT, p_type TEXT) -> JSONB`
+리액션 토글. 이미 있으면 제거, 없으면 추가. `reactions` + `user_reactions` 동시 관리.
+
+- **SECURITY DEFINER** — RLS 우회
+- 반환: `{"action": "added"}` 또는 `{"action": "removed"}`
+- 인증 필수
+
+### `get_post_reactions(p_post_id BIGINT) -> TABLE`
+게시글의 리액션 목록 + 현재 사용자 반응 여부.
+
+- 반환 컬럼: `reaction_type`, `count`, `user_reacted`
+
+### `soft_delete_post(p_post_id BIGINT) -> void`
+게시글 소프트삭제. `deleted_at = now()` 설정.
+
+- 본인 게시글만 삭제 가능
+- 이미 삭제된 게시글은 예외 발생
+
+### `soft_delete_comment(p_comment_id BIGINT) -> void`
+댓글 소프트삭제. 동작 방식은 `soft_delete_post`와 동일.
+
+### `is_group_member(p_group_id BIGINT) -> BOOLEAN`
+현재 사용자의 그룹 멤버십 확인.
+
+- **SECURITY DEFINER** — RLS 재귀 방지용
+- `status = 'approved'` AND `left_at IS NULL` 확인
+
+### `get_emotion_trend(days INT DEFAULT 7) -> TABLE`
+최근 N일간 감정 트렌드 상위 5개 반환.
+
+- 반환 컬럼: `emotion`, `cnt`
+
+### `get_recommended_posts_by_emotion(p_post_id BIGINT, p_limit INT DEFAULT 10) -> TABLE`
+지정 게시글과 감정이 겹치는 공개 글 추천.
+
+- 정렬: 감정 일치 수 > 좋아요 수 > 최신순
+- 그룹 게시글 제외 (`group_id IS NULL`)
+
+### `cleanup_orphan_group_members(days_inactive INT DEFAULT 180) -> INT`
+장기 비활성 익명 사용자의 `group_members` 행 삭제.
+
+- 반환: 삭제된 행 수
+- 안전 보정: 0/음수 -> 1일, NULL -> 180일
+
+---
+
+## RLS 정책
+
+### posts
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Everyone can read posts | SELECT | `deleted_at IS NULL` AND (공개 OR `is_group_member()`) |
+| Authenticated users can create posts | INSERT | `auth.uid() = author_id` |
+| Users can update own posts | UPDATE | `auth.uid() = author_id` |
+
+> hard DELETE 정책 제거됨 — `soft_delete_post()` 사용
+
+### comments
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Everyone can read comments | SELECT | `deleted_at IS NULL` AND (공개 OR `is_group_member()`) |
+| Authenticated users can create comments | INSERT | `auth.uid() = author_id` |
+| Users can update own comments | UPDATE | `auth.uid() = author_id` |
+
+> hard DELETE 정책 제거됨 — `soft_delete_comment()` 사용
+
+### reactions
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Everyone can read reactions | SELECT | 무조건 허용 |
+
+> INSERT/UPDATE/DELETE 정책 제거됨 — `toggle_reaction()` 사용
+
+### boards
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Everyone can read boards | SELECT | 무조건 허용 |
+| Only app_admin can create boards | INSERT | `auth.uid() IN app_admin` |
+
+### groups
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Everyone can read groups | SELECT | 무조건 허용 |
+| Only app_admin can create groups as owner | INSERT | `auth.uid() IN app_admin` AND `owner_id = auth.uid()` |
+
+### group_members
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Users can read group_members | SELECT | 자기 행 OR (승인 멤버 AND `is_group_member()`) |
+| Users can join groups | INSERT | `auth.uid() = user_id` |
+| Users can update own group_members | UPDATE | `auth.uid() = user_id` |
+
+### app_admin
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| Users can read own app_admin row | SELECT | `auth.uid() = user_id` |
+
+### post_analysis
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| post_analysis_select | SELECT | 무조건 허용 |
+
+### user_reactions
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| user_reactions_select | SELECT | 무조건 허용 |
+| user_reactions_insert | INSERT | `auth.uid() = user_id` |
+| user_reactions_delete | DELETE | `auth.uid() = user_id` |
+
+---
+
+## 트리거
+
+| 트리거 | 테이블 | 이벤트 | 설명 |
+|---|---|---|---|
+| `trg_posts_updated_at` | posts | BEFORE UPDATE | `updated_at` 자동 갱신 |
+| `trg_comments_updated_at` | comments | BEFORE UPDATE | `updated_at` 자동 갱신 |
+| `trg_boards_updated_at` | boards | BEFORE UPDATE | `updated_at` 자동 갱신 |
+| `trg_groups_updated_at` | groups | BEFORE UPDATE | `updated_at` 자동 갱신 |
+| `trg_check_daily_post_limit` | posts | BEFORE INSERT | 일일 게시글 50건 제한 |
+| `trg_check_daily_comment_limit` | comments | BEFORE INSERT | 일일 댓글 100건 제한 |
+| `analyze_post_on_insert` | posts | AFTER INSERT | Edge Function `analyze-post` 자동 호출 |
+
+---
+
+## 인덱스
+
+### posts
+| 인덱스 | 컬럼 | 비고 |
+|---|---|---|
+| `idx_posts_created_at` | `created_at DESC` | |
+| `idx_posts_board_id` | `board_id` | |
+| `idx_posts_group_id` | `group_id` | |
+| `idx_posts_author_id` | `author_id` | |
+| `idx_posts_member_id` | `member_id` | |
+| `idx_posts_deleted_at` | `deleted_at` | partial: WHERE deleted_at IS NOT NULL |
+| `idx_posts_board_created_at` | `board_id, created_at DESC` | |
+| `idx_posts_author_id_created_at` | `author_id, created_at DESC` | |
+| `idx_posts_group_created_at` | `group_id, created_at DESC` | |
+
+### comments
+| 인덱스 | 컬럼 | 비고 |
+|---|---|---|
+| `idx_comments_post_id` | `post_id` | |
+| `idx_comments_board_id` | `board_id` | |
+| `idx_comments_group_id` | `group_id` | |
+| `idx_comments_author_id` | `author_id` | |
+| `idx_comments_deleted_at` | `deleted_at` | partial: WHERE deleted_at IS NOT NULL |
+| `idx_comments_author_id_created_at` | `author_id, created_at DESC` | |
+
+### 기타
+| 인덱스 | 테이블 | 컬럼 |
+|---|---|---|
+| `idx_reactions_post_id` | reactions | `post_id` |
+| `idx_boards_visibility` | boards | `visibility` |
+| `idx_boards_group_id` | boards | `group_id` |
+| `idx_groups_owner_id` | groups | `owner_id` |
+| `idx_groups_invite_code` | groups | `invite_code` |
+| `idx_group_members_user_id` | group_members | `user_id` |
+| `idx_group_members_lookup` | group_members | `group_id, user_id, status` |
+| `idx_group_members_approved` | group_members | `group_id, user_id` (partial: status='approved') |
+| `idx_group_members_left_at` | group_members | `left_at` (partial: left_at IS NOT NULL) |
+| `idx_post_analysis_emotions` | post_analysis | `emotions` (GIN) |
+
+---
+
+## 제약조건
+
+| 테이블 | 제약조건 | 설명 |
+|---|---|---|
+| groups | `groups_join_mode_check` | join_mode IN ('invite_only', 'request_approve', 'code_join') |
+| groups | `groups_invite_code_unique` | invite_code UNIQUE |
+| groups | `groups_name_length` | length(name) <= 100 |
+| groups | `groups_description_length` | length(description) <= 1000 |
+| boards | `boards_visibility_check` | visibility IN ('public', 'private') |
+| boards | `boards_anon_mode_check` | anon_mode IN ('always_anon', 'allow_choice', 'require_name') |
+| group_members | `group_members_role_check` | role IN ('owner', 'member', 'moderator') |
+| group_members | `group_members_status_check` | status IN ('pending', 'approved', 'rejected', 'left') |
+| posts | `posts_title_length` | length(title) <= 200 |
+| posts | `posts_content_length` | length(content) <= 100000 |
+| comments | `comments_content_length` | length(content) <= 5000 |
+
+---
+
+## Realtime
+
+`supabase_realtime` publication에 포함된 테이블:
+- `post_analysis`
+- `reactions`
+- `user_reactions`
+
+### 클라이언트 구독 패턴
+
+앱/웹 모두 `post_analysis` INSERT를 Realtime으로 감지하여 감정 분석 결과를 실시간 수신:
+
+```typescript
+// postgres_changes 구독 (앱/웹 공통 패턴)
+supabase
+  .channel(`post-analysis-${postId}`)
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'post_analysis',
+    filter: `post_id=eq.${postId}`,
+  }, () => {
+    queryClient.invalidateQueries({ queryKey: ['postAnalysis', postId] })
+  })
+  .subscribe()
+```
+
+**Fallback 전략**: Realtime 구독 후 15초 경과해도 분석 결과 없으면 `analyze-post-on-demand` Edge Function 수동 호출.
+
+---
+
+## Edge Functions (앱 레포에서 관리)
+
+| 함수 | JWT 검증 | 트리거 | 설명 |
+|---|---|---|---|
+| `analyze-post` | X | DB Webhook (posts INSERT) | 게시글 작성 시 자동 감정 분석 |
+| `analyze-post-on-demand` | O | 클라이언트 수동 호출 | Webhook 실패/지연 시 fallback |
+
+### 감정 분석 흐름
+
+```
+게시글 INSERT
+  ├─ [자동] DB Webhook → analyze-post Edge Function → Claude API → post_analysis UPSERT
+  │    └─ Realtime → 클라이언트 즉시 수신
+  └─ [fallback] 15초 후 → analyze-post-on-demand → 동일 분석 → post_analysis UPSERT
+       └─ Realtime → 클라이언트 즉시 수신
+```
+
+> `smart-service`, `recommend-posts-by-emotion` Edge Function은 삭제됨.
+> 추천은 `get_recommended_posts_by_emotion` RPC로 직접 호출.
+
+---
+
+## Storage
+
+### `post-images` 버킷
+- **공개 버킷** (public: true)
+- 파일 크기 제한: 50MB
+- 허용 MIME: `image/jpeg`, `image/png`, `image/webp`, `image/gif`
+- 폴더 구조: `{user_id}/filename`
+
+**Storage 정책**:
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| authenticated users can upload | INSERT | `auth.uid() = folder[0]` |
+| anyone can read | SELECT | `bucket_id = 'post-images'` |
+| users can delete own | DELETE | `auth.uid() = folder[0]` |
+
+> Storage는 Dashboard에서 수동 구성 필요 (마이그레이션에서는 storage 스키마 존재 시에만 실행)
+
+---
+
+## 마이그레이션 히스토리
+
+| 순서 | 파일 | 설명 |
+|---|---|---|
+| 1 | `20260301000001_schema.sql` | 베이스라인: 확장, 함수, 테이블, 인덱스, 뷰, 트리거 |
+| 2 | `20260301000002_rls.sql` | 베이스라인: 전체 RLS 정책 |
+| 3 | `20260301000003_infra.sql` | 베이스라인: 스키마 권한(grants) + Storage 버킷/정책 |
+| 4 | `20260302000000_fix_rls_update_policies.sql` | UPDATE 정책에서 `deleted_at IS NULL` 제거 (소프트삭제 호환) |
+| 5 | `20260303000001_core_redesign.sql` | 리액션 RPC, 소프트삭제 RPC, FK CASCADE, 길이 제약조건, 인덱스 추가, Realtime |
+| 6 | `20260303000002_fix_group_members_recursion.sql` | `is_group_member()` 함수로 RLS 자기참조 재귀 수정 |
+
+---
+
+## ER 다이어그램 (텍스트)
+
+```
+auth.users
+  |
+  +--< groups (owner_id)
+  |     |
+  |     +--< boards (group_id) CASCADE
+  |     |
+  |     +--< group_members (group_id) CASCADE
+  |           |
+  |           +--< posts (member_id) SET NULL
+  |
+  +--< posts (author_id)
+  |     |
+  |     +--< comments (post_id) CASCADE
+  |     +--< reactions (post_id) CASCADE
+  |     +--< user_reactions (post_id) CASCADE
+  |     +--< post_analysis (post_id) CASCADE  [1:1]
+  |
+  +--< comments (author_id)
+  +--< user_reactions (user_id) CASCADE
+  +--< app_admin (user_id) CASCADE
+
+posts --< boards (board_id) SET NULL
+posts --< groups (group_id) SET NULL
+comments --< boards (board_id) SET NULL
+comments --< groups (group_id) SET NULL
+```
