@@ -5,6 +5,8 @@
 #   1. migrations (SQL 파일)
 #   2. config.toml (Supabase 프로젝트 설정)
 #   3. types/database.gen.ts (자동 생성 DB 타입)
+#   4. shared/constants.ts (공유 상수 → constants.generated.ts)
+#   5. shared/types.ts (공유 비즈니스 타입 → database.types.ts)
 #
 # 사용법:
 #   bash scripts/sync-to-projects.sh          # 양쪽 모두

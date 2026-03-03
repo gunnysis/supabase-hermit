@@ -1,6 +1,6 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-03
+> 최종 업데이트: 2026-03-04
 > 마이그레이션 7개 적용 완료
 
 ---
@@ -135,7 +135,7 @@
 ---
 
 ### `post_analysis`
-AI 감정 분석 결과. 게시글 INSERT시 DB Webhook으로 자동 생성.
+AI 감정 분석 결과. 게시글 INSERT/UPDATE시 DB Trigger로 자동 생성.
 
 | 컬럼 | 타입 | 기본값 | 설명 |
 |---|---|---|---|
@@ -163,14 +163,17 @@ AI 감정 분석 결과. 게시글 INSERT시 DB Webhook으로 자동 생성.
 
 ```sql
 SELECT
-  p.*,
-  SUM(r.count)::integer AS like_count,
-  COUNT(comments)::integer AS comment_count,
+  p.id, p.title, p.content, p.author, p.author_id, p.created_at,
+  p.board_id, p.group_id, p.is_anonymous, p.display_name, p.member_id, p.image_url,
+  COALESCE((SELECT SUM(r.count) FROM reactions r WHERE r.post_id = p.id), 0)::integer AS like_count,
+  (SELECT COUNT(*)::integer FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) AS comment_count,
   pa.emotions
 FROM posts p
 LEFT JOIN post_analysis pa ON pa.post_id = p.id
 WHERE p.deleted_at IS NULL;
 ```
+
+> 주의: `updated_at`, `deleted_at`은 뷰에 포함되지 않음. 리액션/댓글 수는 서브쿼리로 계산.
 
 ---
 

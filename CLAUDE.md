@@ -27,7 +27,8 @@ supabase-hermit/
 │   └── sync-to-projects.sh        # 앱/웹 레포로 migrations + config + types 동기화
 ├── docs/
 │   ├── SCHEMA.md                   # DB 스키마 상세 문서
-│   └── SCRIPTS.md                  # 스크립트 사용법 상세
+│   ├── SCRIPTS.md                  # 스크립트 사용법 상세
+│   └── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
 └── CLAUDE.md
