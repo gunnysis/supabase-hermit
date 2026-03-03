@@ -233,6 +233,26 @@ sync_to_repo() {
   sync_config "$name" "$repo"
   sync_types "$name" "$repo"
   sync_shared "$name" "$repo"
+
+  # 앱 전용: SHARED_PALETTE CJS 래퍼 생성 (tailwind.config.js용)
+  if [ "$name" = "앱" ]; then
+    local palette_target="$repo/shared-palette.js"
+    echo "  [palette-cjs]"
+    {
+      echo "// 공유 색상 팔레트 — CommonJS 래퍼 (tailwind.config.js용)"
+      echo "// 원본: supabase-hermit/shared/constants.ts의 SHARED_PALETTE"
+      echo "// sync-to-projects.sh에 의해 자동 생성됨 — 직접 수정 금지"
+      echo ""
+      awk '/^export const SHARED_PALETTE/,/^} as const/' "$CENTRAL_SHARED_CONSTANTS" | \
+        sed 's/^export const /const /' | \
+        sed 's/ as const$//'
+      echo ""
+      echo "module.exports = { SHARED_PALETTE };"
+    } > "$palette_target"
+    echo "    ✅ shared-palette.js 생성"
+    TOTAL_CHANGES=$((TOTAL_CHANGES + 1))
+  fi
+
   echo ""
 }
 
