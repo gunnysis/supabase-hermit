@@ -1,0 +1,109 @@
+# 은둔마을 Supabase 설정
+# https://supabase.com/docs/guides/local-development/cli/config
+project_id = "gns-hermit-comm"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54325
+
+[inbucket]
+enabled = true
+port = 54324
+
+# Windows Docker에서 Storage 헬스 체크 타임아웃 시 false로 두면 supabase start 성공. 이미지 업로드 필요 시 true로 복구.
+[storage]
+enabled = false
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:8081"
+additional_redirect_urls = ["https://localhost:8081"]
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+otp_length = 6
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 8083
+
+# Edge Functions
+[functions.analyze-post]
+verify_jwt = false
+
+# DEPRECATED: smart-service는 analyze-post-on-demand로 대체됨
+[functions.smart-service]
+verify_jwt = false
+
+[functions.analyze-post-on-demand]
+verify_jwt = true
+
+[functions.recommend-posts-by-emotion]
+verify_jwt = true
+
+[analytics]
+enabled = false
