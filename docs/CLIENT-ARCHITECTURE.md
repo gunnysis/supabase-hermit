@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-03
+> 최종 업데이트: 2026-03-03 (v2: 글 수정 시 자동 재분석 추가)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -57,37 +57,48 @@ bash scripts/sync-to-projects.sh
 ### 전체 흐름
 
 ```
-[사용자] 게시글 작성
+[사용자] 게시글 작성/수정
     │
     ▼
-[Supabase] posts INSERT
+[Supabase] posts INSERT 또는 UPDATE (content/title 변경)
     │
-    ├─ [DB Webhook] ──► analyze-post Edge Function
+    ├─ [DB Trigger] ──► analyze-post Edge Function
+    │                       │
+    │                       ▼
+    │                   쿨다운 확인 (60초 이내 재분석 방지)
     │                       │
     │                       ▼
     │                   Claude API (haiku-4-5)
     │                       │
     │                       ▼
-    │                   post_analysis UPSERT
+    │                   post_analysis UPSERT (analyzed_at 갱신)
     │                       │
     │                       ▼
-    │                   [Realtime] postgres_changes INSERT
+    │                   [Realtime] postgres_changes INSERT/UPDATE
     │                       │
     │                       ▼
     │                   클라이언트 자동 수신 → UI 업데이트
     │
-    └─ [15초 fallback] ──► analyze-post-on-demand Edge Function
+    └─ [15초 fallback] ──► analyze-post-on-demand Edge Function (force, 쿨다운 무시)
                                │
                                ▼
                            (동일 분석 흐름)
 ```
+
+### 비용 보호 (쿨다운)
+
+| 항목 | 내용 |
+|---|---|
+| 트리거 레벨 | `WHEN (OLD.content IS DISTINCT FROM NEW.content OR OLD.title IS DISTINCT FROM NEW.title)` — 실제 내용 변경 시에만 발동 |
+| Edge Function 레벨 | `analyzeAndSave` 내 60초 쿨다운 — `analyzed_at` 기준으로 60초 이내 재분석 스킵 |
+| 수동 재시도 | `analyze-post-on-demand`는 `force: true`로 쿨다운 우회 (사용자 명시 요청) |
 
 ### 클라이언트 분석 대기 전략 (앱/웹 통일)
 
 | 단계 | 시점 | 동작 |
 |---|---|---|
 | 1 | 즉시 | `post_analysis` 초기 조회 |
-| 2 | 즉시 | Realtime `postgres_changes` 구독 (INSERT 감지) |
+| 2 | 즉시 | Realtime `postgres_changes` 구독 (`*`: INSERT + UPDATE 감지) |
 | 3 | 15초 후 | 결과 없으면 `analyze-post-on-demand` Edge Function 호출 |
 | 4 | +5초 | Realtime 누락 대비 수동 invalidate |
 
@@ -96,7 +107,7 @@ bash scripts/sync-to-projects.sh
 ```
 마운트
   ├─ useQuery: postAnalysis 초기 조회
-  ├─ useEffect: Realtime 구독 (분석 결과 있으면 구독 해제)
+  ├─ useEffect: Realtime 구독 (event: * — INSERT/UPDATE 모두 감지)
   └─ useEffect: 15초 타이머
        └─ 캐시 확인 → null이면 invokeSmartService → 5초 후 invalidate
 ```
@@ -106,7 +117,7 @@ bash scripts/sync-to-projects.sh
 ```
 마운트
   ├─ useQuery: postAnalysis 초기 조회
-  ├─ useEffect: Realtime 구독 (분석 결과 있으면 구독 해제)
+  ├─ useEffect: Realtime 구독 (event: * — INSERT/UPDATE 모두 감지)
   └─ useEffect: 15초 타이머
        └─ 캐시 확인 → 없으면 invokeAnalyzeOnDemand(postId, content, title)
             └─ 5초 후 invalidate
@@ -186,8 +197,8 @@ EmotionTags (clickable) → Link href="/search?emotion=..."
 
 | 함수 | 상태 | JWT | 용도 |
 |---|---|---|---|
-| `analyze-post` | 활성 | X | DB Webhook 자동 트리거 |
-| `analyze-post-on-demand` | 활성 | O | 15초 fallback + 수동 재시도 |
+| `analyze-post` | 활성 | X | DB Trigger 자동 (INSERT + UPDATE) |
+| `analyze-post-on-demand` | 활성 | O | 15초 fallback + 수동 재시도 (쿨다운 우회) |
 | ~~`smart-service`~~ | 삭제 | - | analyze-post-on-demand로 대체 |
 | ~~`recommend-posts-by-emotion`~~ | 삭제 | - | RPC 직접 호출로 대체 |
 

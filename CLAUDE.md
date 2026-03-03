@@ -14,7 +14,8 @@ supabase-hermit/
 │       ├── 20260301000003_infra.sql               # 베이스라인: 권한(grants) + Storage
 │       ├── 20260302000000_fix_rls_update_policies.sql  # UPDATE 정책 수정
 │       ├── 20260303000001_core_redesign.sql       # 리액션 RPC, 소프트삭제, FK CASCADE, 제약조건
-│       └── 20260303000002_fix_group_members_recursion.sql  # RLS 자기참조 재귀 수정
+│       ├── 20260303000002_fix_group_members_recursion.sql  # RLS 자기참조 재귀 수정
+│       └── 20260303000003_post_update_reanalysis.sql  # 글 수정 시 감정분석 자동 재실행
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -65,8 +66,8 @@ supabase-hermit/
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
 |---|---|---|
-| `analyze-post` | X | DB Webhook 트리거 (게시글 INSERT시 자동 호출) |
-| `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback) |
+| `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, 60초 쿨다운) |
+| `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback + 재시도, 쿨다운 우회) |
 
 ## 워크플로
 

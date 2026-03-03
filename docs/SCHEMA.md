@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
 > 최종 업데이트: 2026-03-03
-> 마이그레이션 6개 적용 완료
+> 마이그레이션 7개 적용 완료
 
 ---
 
@@ -298,6 +298,7 @@ WHERE p.deleted_at IS NULL;
 | `trg_check_daily_post_limit` | posts | BEFORE INSERT | 일일 게시글 50건 제한 |
 | `trg_check_daily_comment_limit` | comments | BEFORE INSERT | 일일 댓글 100건 제한 |
 | `analyze_post_on_insert` | posts | AFTER INSERT | Edge Function `analyze-post` 자동 호출 |
+| `analyze_post_on_update` | posts | AFTER UPDATE (content, title) | content/title 변경 시 `analyze-post` 재호출 (WHEN 절로 실제 변경만) |
 
 ---
 
@@ -369,14 +370,15 @@ WHERE p.deleted_at IS NULL;
 
 ### 클라이언트 구독 패턴
 
-앱/웹 모두 `post_analysis` INSERT를 Realtime으로 감지하여 감정 분석 결과를 실시간 수신:
+앱/웹 모두 `post_analysis`의 INSERT/UPDATE를 Realtime으로 감지하여 감정 분석 결과를 실시간 수신:
 
 ```typescript
 // postgres_changes 구독 (앱/웹 공통 패턴)
+// event: '*' — INSERT(신규 분석) + UPDATE(재분석) 모두 감지
 supabase
   .channel(`post-analysis-${postId}`)
   .on('postgres_changes', {
-    event: 'INSERT',
+    event: '*',
     schema: 'public',
     table: 'post_analysis',
     filter: `post_id=eq.${postId}`,
@@ -394,16 +396,16 @@ supabase
 
 | 함수 | JWT 검증 | 트리거 | 설명 |
 |---|---|---|---|
-| `analyze-post` | X | DB Webhook (posts INSERT) | 게시글 작성 시 자동 감정 분석 |
-| `analyze-post-on-demand` | O | 클라이언트 수동 호출 | Webhook 실패/지연 시 fallback |
+| `analyze-post` | X | DB Trigger (posts INSERT + UPDATE) | 게시글 작성/수정 시 자동 감정 분석 (60초 쿨다운) |
+| `analyze-post-on-demand` | O | 클라이언트 수동 호출 | Webhook 실패/지연 시 fallback + 수동 재시도 (쿨다운 우회) |
 
 ### 감정 분석 흐름
 
 ```
-게시글 INSERT
-  ├─ [자동] DB Webhook → analyze-post Edge Function → Claude API → post_analysis UPSERT
-  │    └─ Realtime → 클라이언트 즉시 수신
-  └─ [fallback] 15초 후 → analyze-post-on-demand → 동일 분석 → post_analysis UPSERT
+게시글 INSERT / UPDATE (content/title 변경)
+  ├─ [자동] DB Trigger → analyze-post → 쿨다운 확인 → Claude API → post_analysis UPSERT
+  │    └─ Realtime (INSERT 또는 UPDATE) → 클라이언트 즉시 수신
+  └─ [fallback] 15초 후 → analyze-post-on-demand (force) → 동일 분석 → post_analysis UPSERT
        └─ Realtime → 클라이언트 즉시 수신
 ```
 
@@ -441,6 +443,7 @@ supabase
 | 4 | `20260302000000_fix_rls_update_policies.sql` | UPDATE 정책에서 `deleted_at IS NULL` 제거 (소프트삭제 호환) |
 | 5 | `20260303000001_core_redesign.sql` | 리액션 RPC, 소프트삭제 RPC, FK CASCADE, 길이 제약조건, 인덱스 추가, Realtime |
 | 6 | `20260303000002_fix_group_members_recursion.sql` | `is_group_member()` 함수로 RLS 자기참조 재귀 수정 |
+| 7 | `20260303000003_post_update_reanalysis.sql` | 게시글 수정 시 감정분석 자동 재실행 트리거 |
 
 ---
 
