@@ -142,7 +142,7 @@ export interface RecommendedPost {
   created_at: string
 }
 
-export const REACTION_TYPES = ['👍', '❤️', '😂', '😢', '😮'] as const
+export const REACTION_TYPES = ['like', 'heart', 'laugh', 'sad', 'surprise'] as const
 export type ReactionType = (typeof REACTION_TYPES)[number]
 
 // 요청 타입

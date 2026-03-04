@@ -9,6 +9,7 @@
 #   bash scripts/db.sh lint              # RLS/스키마 린트
 #   bash scripts/db.sh status            # migration 상태 확인
 #   bash scripts/db.sh gen-types         # DB 타입 생성
+#   bash scripts/db.sh verify            # 레포 간 정합성 검증
 
 set -euo pipefail
 
@@ -17,7 +18,7 @@ cd "$CENTRAL"
 
 # .env에서 토큰 로드
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  export $(grep -v '^#' .env | grep -v '^\s*$' | xargs)
 fi
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
@@ -43,10 +44,21 @@ case "$CMD" in
     # dry-run이 아닌 경우에만 자동 gen-types + sync
     if ! $IS_DRY_RUN; then
       echo ""
-      echo "=== 자동 후처리: gen-types → sync ==="
-      bash "$CENTRAL/scripts/gen-types.sh"
+      echo "=== 후처리 1/2: gen-types ==="
+      if bash "$CENTRAL/scripts/gen-types.sh"; then
+        echo ""
+        echo "=== 후처리 2/2: sync ==="
+        bash "$CENTRAL/scripts/sync-to-projects.sh"
+      else
+        echo ""
+        echo "❌ gen-types 실패 — sync를 건너뜁니다."
+        echo "   수동으로 실행하세요: bash scripts/gen-types.sh && bash scripts/sync-to-projects.sh"
+        exit 1
+      fi
+
       echo ""
-      bash "$CENTRAL/scripts/sync-to-projects.sh"
+      echo "=== 검증 ==="
+      bash "$CENTRAL/scripts/verify.sh" --quiet || true
     fi
     ;;
   pull)
@@ -64,6 +76,9 @@ case "$CMD" in
   gen-types)
     bash "$CENTRAL/scripts/gen-types.sh"
     ;;
+  verify)
+    bash "$CENTRAL/scripts/verify.sh" "$@"
+    ;;
   status)
     echo "=== migration status ==="
     echo "중앙 프로젝트: $CENTRAL"
@@ -77,7 +92,7 @@ case "$CMD" in
     npx supabase db push --linked --dry-run 2>&1
     ;;
   *)
-    echo "사용법: bash scripts/db.sh {push|pull|diff|lint|status|gen-types}"
+    echo "사용법: bash scripts/db.sh {push|pull|diff|lint|status|gen-types|verify}"
     exit 1
     ;;
 esac

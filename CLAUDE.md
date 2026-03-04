@@ -82,11 +82,12 @@ vi supabase/migrations/20260304000001_description.sql
 # dry-run 확인
 bash scripts/db.sh push --dry-run
 
-# 적용 (자동으로 gen-types -> sync 실행됨)
+# 적용 (자동으로 gen-types -> sync -> verify 실행됨)
 bash scripts/db.sh push
 ```
 
-> `push` 성공 시 자동으로 타입 재생성(`gen-types.sh`) + 앱/웹 동기화(`sync-to-projects.sh`)가 실행된다.
+> `push` 성공 시 자동으로 타입 재생성(`gen-types.sh`) → 앱/웹 동기화(`sync-to-projects.sh`) → 정합성 검증(`verify.sh`)이 실행된다.
+> gen-types 실패 시 sync를 건너뛰고 에러를 표시한다.
 > 수동 sync가 필요한 경우: `bash scripts/sync-to-projects.sh`
 
 ### 2. Remote 변경 사항 가져오기 (Dashboard에서 수정한 경우)
@@ -105,18 +106,20 @@ bash scripts/db.sh gen-types
 ```bash
 bash scripts/db.sh status   # 로컬/remote 비교
 bash scripts/db.sh lint      # RLS/스키마 린트
+bash scripts/db.sh verify    # 레포 간 정합성 검증
 ```
 
 ### 5. npm scripts (편의용)
 ```bash
-npm run push          # db push + gen-types + sync
+npm run push          # db push + gen-types + sync + verify
 npm run push:dry      # dry-run
 npm run pull          # remote -> local
 npm run status        # migration 상태
 npm run lint          # RLS/스키마 린트
-npm run gen-types     # 타입만 재생성
+npm run gen-types     # 타입만 재생성 (변경 감지)
 npm run sync          # 동기화만 실행
 npm run sync:dry      # 동기화 미리보기
+npm run verify        # 레포 간 정합성 검증
 ```
 
 ## 동기화 대상
