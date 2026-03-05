@@ -16,6 +16,9 @@ supabase-hermit/
 │       ├── 20260303000001_core_redesign.sql       # 리액션 RPC, 소프트삭제, FK CASCADE, 제약조건
 │       ├── 20260303000002_fix_group_members_recursion.sql  # RLS 자기참조 재귀 수정
 │       ├── 20260303000003_post_update_reanalysis.sql  # 글 수정 시 감정분석 자동 재실행
+│       ├── 20260304000001_fix_reactions_data.sql      # 리액션 데이터 정합성 수정
+│       ├── 20260306000001_remove_author_column.sql    # author 컬럼 제거
+│       ├── 20260307000001_recommendation_improvements.sql  # 추천 개선 (트렌딩, 감정 폴백, 시간 감쇠)
 │       └── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)

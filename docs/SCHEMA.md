@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
 > 최종 업데이트: 2026-03-05
-> 마이그레이션 10개 적용 완료
+> 마이그레이션 11개 적용 완료
 
 ---
 
@@ -78,6 +78,7 @@
 | `is_anonymous` | BOOLEAN | `true` | 익명 여부 |
 | `display_name` | TEXT | `'익명'` | 표시 이름 |
 | `image_url` | TEXT | nullable | 첨부 이미지 URL |
+| `initial_emotions` | TEXT[] | `NULL` | 글쓰기 시 사용자가 선택한 감정 (AI 분석 힌트) |
 | `created_at` | TIMESTAMPTZ | `now()` | |
 | `updated_at` | TIMESTAMPTZ | `now()` | 자동 갱신 (트리거) |
 | `deleted_at` | TIMESTAMPTZ | nullable | 소프트삭제 시각 |
@@ -141,6 +142,25 @@ AI 감정 분석 결과. 게시글 INSERT/UPDATE시 DB Trigger로 자동 생성.
 | `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE, UNIQUE | |
 | `emotions` | TEXT[] | `'{}'` | 감정 태그 배열 |
 | `analyzed_at` | TIMESTAMPTZ | `now()` | 분석 시각 |
+
+---
+
+### `user_preferences`
+사용자 설정. 감정 선호, 테마, 온보딩 상태 관리.
+
+| 컬럼 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `user_id` | UUID | PK, FK -> auth.users, ON DELETE CASCADE | |
+| `preferred_emotions` | TEXT[] | `'{}'` | 선호 감정 목록 |
+| `onboarding_completed` | BOOLEAN | `false` | 온보딩 완료 여부 |
+| `theme_preference` | TEXT | `'system'` | 테마 설정 |
+| `notification_enabled` | BOOLEAN | `true` | 알림 활성화 |
+| `created_at` | TIMESTAMPTZ | `now()` | |
+| `updated_at` | TIMESTAMPTZ | `now()` | |
+
+**theme_preference 값**: `light`, `dark`, `system`
+
+**RLS 정책**: 자기 행만 SELECT/INSERT/UPDATE 가능
 
 ---
 
@@ -231,6 +251,38 @@ WHERE p.deleted_at IS NULL;
 - 반환: 삭제된 행 수
 - 안전 보정: 0/음수 -> 1일, NULL -> 180일
 
+### `get_posts_by_emotion(p_emotion TEXT, p_limit INT, p_offset INT) -> TABLE`
+특정 감정의 게시글 필터링. 감정 필터 바에서 사용.
+
+- 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`
+- `posts_with_like_count` 뷰에서 `p_emotion = ANY(emotions)` 필터
+- 그룹 게시글 제외 (`group_id IS NULL`)
+
+### `get_similar_feeling_count(p_post_id BIGINT, p_days INT DEFAULT 30) -> INT`
+게시글의 감정과 유사한 감정을 가진 다른 사용자 수 반환. 게시글 상세 "비슷한 마음" 표시용.
+
+- 해당 게시글의 감정 태그와 겹치는(`&&`) 다른 사용자의 글 작성자 수
+- 본인 제외, 삭제된 글 제외, p_days일 이내
+
+### `get_user_emotion_calendar(p_user_id UUID, p_start DATE, p_end DATE) -> TABLE`
+사용자의 감정 캘린더 히트맵 데이터.
+
+- 반환 컬럼: `day`, `emotions`, `post_count`
+- 기간 내 각 날짜별 작성한 글의 감정 + 글 수
+- `generate_series`로 빈 날짜도 포함
+
+### `get_emotion_timeline(p_days INT DEFAULT 7) -> TABLE`
+커뮤니티 감정 분포 타임라인 (영역 차트용).
+
+- 반환 컬럼: `day`, `emotion`, `cnt`
+- 최근 N일간 날짜별 감정별 집계
+
+### `get_my_activity_summary() -> TABLE`
+내 활동 요약 (나의 공간 프로필용).
+
+- 반환 컬럼: `total_posts`, `total_comments`, `total_reactions`, `current_streak`
+- 현재 사용자의 글/댓글/받은 리액션 수 + 연속 활동 일수
+
 ---
 
 ## RLS 정책
@@ -296,6 +348,13 @@ WHERE p.deleted_at IS NULL;
 | user_reactions_insert | INSERT | `auth.uid() = user_id` |
 | user_reactions_delete | DELETE | `auth.uid() = user_id` |
 
+### user_preferences
+| 정책 | 동작 | 조건 |
+|---|---|---|
+| user_prefs_select | SELECT | `auth.uid() = user_id` |
+| user_prefs_insert | INSERT | `auth.uid() = user_id` |
+| user_prefs_update | UPDATE | `auth.uid() = user_id` |
+
 ---
 
 ## 트리거
@@ -328,6 +387,7 @@ WHERE p.deleted_at IS NULL;
 | `idx_posts_author_id_created_at` | `author_id, created_at DESC` | |
 | `idx_posts_group_created_at` | `group_id, created_at DESC` | |
 | `idx_posts_trending` | `group_id, created_at DESC` | partial: WHERE deleted_at IS NULL |
+| `idx_posts_author_deleted_created` | `author_id, created_at DESC` | partial: WHERE deleted_at IS NULL |
 
 ### comments
 | 인덱스 | 컬럼 | 비고 |
@@ -352,6 +412,7 @@ WHERE p.deleted_at IS NULL;
 | `idx_group_members_approved` | group_members | `group_id, user_id` (partial: status='approved') |
 | `idx_group_members_left_at` | group_members | `left_at` (partial: left_at IS NOT NULL) |
 | `idx_post_analysis_emotions` | post_analysis | `emotions` (GIN) |
+| `idx_post_analysis_analyzed_at` | post_analysis | `analyzed_at DESC` |
 
 ---
 
@@ -459,6 +520,7 @@ supabase
 | 8 | `20260304000001_fix_reactions_data.sql` | 리액션 데이터 정합성 수정 |
 | 9 | `20260306000001_remove_author_column.sql` | author 컬럼 제거 |
 | 10 | `20260307000001_recommendation_improvements.sql` | 추천 개선 (트렌딩, 감정 폴백, pct, 시간 감쇠) |
+| 11 | `20260308000001_ux_redesign.sql` | UX 리디자인: initial_emotions, user_preferences, 감정 RPC 5개, 인덱스 2개 |
 
 ---
 
@@ -485,6 +547,7 @@ auth.users
   +--< comments (author_id)
   +--< user_reactions (user_id) CASCADE
   +--< app_admin (user_id) CASCADE
+  +--< user_preferences (user_id) CASCADE  [1:1]
 
 posts --< boards (board_id) SET NULL
 posts --< groups (group_id) SET NULL

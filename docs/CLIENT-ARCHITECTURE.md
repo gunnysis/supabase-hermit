@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-03 (v2: 글 수정 시 자동 재분석 추가)
+> 최종 업데이트: 2026-03-05 (v3: UX 리디자인 — 감정 시각화, 화면 전환, Sentry 강화)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -14,7 +14,7 @@
 
 | 파일 | 내용 | 앱 배포 경로 | 웹 배포 경로 |
 |---|---|---|---|
-| `shared/constants.ts` | 감정 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI) | `src/shared/lib/constants.generated.ts` | `src/lib/constants.generated.ts` |
+| `shared/constants.ts` | 감정 상수, 디자인 토큰, 모션 프리셋 | `src/shared/lib/constants.generated.ts` | `src/lib/constants.generated.ts` |
 | `shared/types.ts` | 비즈니스 타입 (Post, Comment 등) | `src/types/database.types.ts` | `src/types/database.types.ts` |
 | `types/database.gen.ts` | Supabase 자동 생성 DB 타입 | `src/types/database.gen.ts` | `src/types/database.gen.ts` |
 
@@ -24,15 +24,18 @@
 
 ```
 앱: src/shared/lib/constants.ts
-  → export { ALLOWED_EMOTIONS, EMOTION_EMOJI } from './constants.generated'
-  → + 앱 전용 상수 (VALIDATION, ALIAS_ADJECTIVES 등)
+  → export { ALLOWED_EMOTIONS, EMOTION_EMOJI, REACTION_COLOR_MAP, SHARED_PALETTE,
+             EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES } from './constants.generated'
+  → export type { AllowedEmotion, ReactionColorKey } from './constants.generated'
+  → + 앱 전용 상수 (VALIDATION, ALIAS_ADJECTIVES, PAGE_SIZE 등)
 
 앱: src/types/index.ts
   → export * from './database.types'
 
 웹: src/lib/constants.ts
-  → export { ALLOWED_EMOTIONS, EMOTION_EMOJI } from './constants.generated'
-  → + 웹 전용 상수
+  → export { ALLOWED_EMOTIONS, EMOTION_EMOJI, REACTION_COLOR_MAP, SHARED_PALETTE,
+             EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES } from './constants.generated'
+  → + 웹 전용 상수 (VALIDATION, ADJECTIVES, ANIMALS, PAGE_SIZE 등)
 
 웹: src/types/database.ts
   → export * from './database.types'
@@ -219,15 +222,19 @@ src/features/posts/hooks/usePostDetailAnalysis.ts
   ├─ src/shared/lib/api/analysis.ts (invokeSmartService)
   └─ src/shared/lib/supabase.ts (Realtime 구독)
 
-src/features/posts/components/EmotionTags.tsx
-  └─ src/shared/lib/constants.ts (EMOTION_EMOJI)
+src/features/posts/components/
+  ├─ EmotionTags.tsx         → EMOTION_EMOJI
+  ├─ CommunityPulse.tsx      → EMOTION_EMOJI, EMOTION_COLOR_MAP (감정 버블 시각화)
+  ├─ EmotionFilterBar.tsx    → ALLOWED_EMOTIONS, EMOTION_COLOR_MAP (감정 필터 칩)
+  ├─ TrendingPosts.tsx       → 트렌딩 게시글 가로 스크롤
+  ├─ GreetingBanner.tsx      → GREETING_MESSAGES (시간대별 인사)
+  ├─ MoodSelector.tsx        → EMOTION_COLOR_MAP (글쓰기 감정 선택)
+  ├─ EmotionCalendar.tsx     → EMOTION_COLOR_MAP (감정 캘린더 히트맵)
+  ├─ EmotionWave.tsx         → 감정 타임라인 차트
+  └─ ReactionBar.tsx         → 리액션 타입별 차별화 애니메이션 (heart=pulse, laugh=wiggle, sad=droop, surprise=pop)
 
-src/features/posts/components/EmotionTrend.tsx
-  └─ src/shared/lib/constants.ts (EMOTION_EMOJI)
-
-src/app/search.tsx
-  ├─ src/shared/lib/api/posts.ts (searchPosts + emotion filter)
-  └─ src/shared/lib/constants.ts (ALLOWED_EMOTIONS, EMOTION_EMOJI)
+src/app/_layout.tsx
+  └─ 화면 전환 애니메이션 (ios_from_right, slide_from_bottom, fade 등)
 ```
 
 ### 웹 (web)
@@ -239,14 +246,26 @@ src/types/database.ts (re-export)
 src/lib/constants.ts (re-export + 웹 전용)
   └─ src/lib/constants.generated.ts (generated from shared/constants.ts)
 
+src/lib/logger.ts              → Sentry 연동 로거 (dev=console, prod=Sentry)
+src/lib/view-transition.ts     → View Transitions API 래퍼
+
 src/features/posts/hooks/usePostAnalysis.ts
   ├─ src/features/posts/api/postsApi.ts (invokeAnalyzeOnDemand)
   └─ @supabase/supabase-js (Realtime 구독)
 
-src/features/posts/components/EmotionTags.tsx
-  └─ src/lib/constants.ts (EMOTION_EMOJI)
+src/features/posts/components/
+  ├─ EmotionTags.tsx         → EMOTION_EMOJI
+  ├─ CommunityPulse.tsx      → EMOTION_EMOJI, EMOTION_COLOR_MAP (감정 버블 시각화)
+  ├─ EmotionFilterBar.tsx    → ALLOWED_EMOTIONS, EMOTION_COLOR_MAP (감정 필터 칩)
+  ├─ TrendingPosts.tsx       → 트렌딩 게시글 가로 스크롤
+  ├─ GreetingBanner.tsx      → GREETING_MESSAGES (시간대별 인사)
+  ├─ MoodSelector.tsx        → EMOTION_COLOR_MAP (글쓰기 감정 선택)
+  ├─ EmotionCalendar.tsx     → EMOTION_COLOR_MAP (감정 캘린더 히트맵)
+  ├─ EmotionWave.tsx         → 감정 타임라인 차트
+  ├─ PostCard.tsx            → View Transitions (startViewTransition)
+  └─ PostDetailView.tsx      → View Transitions (뒤로가기)
 
-src/features/posts/components/PostDetailView.tsx
-  ├─ src/features/posts/hooks/usePostAnalysis.ts
-  └─ src/features/posts/api/postsApi.ts (invokeAnalyzeOnDemand — 재시도)
+src/app/my/page.tsx            → 나의 공간 (활동 요약, 감정 캘린더, 타임라인)
+src/app/global-error.tsx       → 루트 에러 바운더리 (Sentry 캡처)
+src/instrumentation.ts         → Next.js 서버/엣지 Sentry 초기화
 ```
