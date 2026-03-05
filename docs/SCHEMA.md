@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-06
-> 마이그레이션 12개 적용 완료
+> 최종 업데이트: 2026-03-07
+> 마이그레이션 13개 적용 완료
 
 ---
 
@@ -201,6 +201,7 @@ WHERE p.deleted_at IS NULL;
 리액션 토글. 이미 있으면 제거, 없으면 추가. `reactions` + `user_reactions` 동시 관리.
 
 - **SECURITY DEFINER** — RLS 우회
+- **Advisory Lock** — `pg_advisory_xact_lock`으로 동시성 안전 보장
 - 반환: `{"action": "added"}` 또는 `{"action": "removed"}`
 - 인증 필수
 
@@ -212,11 +213,11 @@ WHERE p.deleted_at IS NULL;
 ### `soft_delete_post(p_post_id BIGINT) -> void`
 게시글 소프트삭제. `deleted_at = now()` 설정.
 
-- 본인 게시글만 삭제 가능
+- 본인 게시글 또는 **관리자** (`app_admin`) 삭제 가능
 - 이미 삭제된 게시글은 예외 발생
 
 ### `soft_delete_comment(p_comment_id BIGINT) -> void`
-댓글 소프트삭제. 동작 방식은 `soft_delete_post`와 동일.
+댓글 소프트삭제. 동작 방식은 `soft_delete_post`와 동일 (관리자 삭제 포함).
 
 ### `is_group_member(p_group_id BIGINT) -> BOOLEAN`
 현재 사용자의 그룹 멤버십 확인.
@@ -284,6 +285,15 @@ WHERE p.deleted_at IS NULL;
 
 - 반환 컬럼: `total_posts`, `total_comments`, `total_reactions`, `current_streak`
 - 현재 사용자의 글/댓글/받은 리액션 수 + 연속 활동 일수
+
+### `search_posts(p_query TEXT, p_limit INT DEFAULT 20, p_offset INT DEFAULT 0) -> TABLE`
+게시글 검색. 제목+내용 ILIKE 기반.
+
+- 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `content_preview`
+- 최소 2자 이상 검색어 필요
+- 그룹 게시글 제외 (`group_id IS NULL`)
+- `content_preview`: HTML 태그 제거 후 200자
+- pg_trgm 인덱스 활용 (가능한 경우)
 
 ---
 
