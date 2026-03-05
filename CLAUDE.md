@@ -20,7 +20,8 @@ supabase-hermit/
 │       ├── 20260306000001_remove_author_column.sql    # author 컬럼 제거
 │       ├── 20260307000001_recommendation_improvements.sql  # 추천 개선 (트렌딩, 감정 폴백, 시간 감쇠)
 │       ├── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
-│       └── 20260309000001_security_performance_fixes.sql  # 보안/성능: boards RLS, 인덱스, RPC 최적화, 제약조건
+│       ├── 20260309000001_security_performance_fixes.sql  # 보안/성능: boards RLS, 인덱스, RPC 최적화, 제약조건
+│       └── 20260310000001_comprehensive_improvements.sql  # 공개 게시판, 뷰 최적화, 검색 RPC, 동시성/관리자 삭제
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -58,13 +59,13 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (14개)
+### RPC 함수 (15개)
 | 함수 | 설명 |
 |---|---|
-| `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER) |
+| `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
 | `get_post_reactions(post_id)` | 게시글 리액션 + 사용자 상태 조회 |
-| `soft_delete_post(post_id)` | 게시글 소프트삭제 |
-| `soft_delete_comment(comment_id)` | 댓글 소프트삭제 |
+| `soft_delete_post(post_id)` | 게시글 소프트삭제 (본인 + 관리자) |
+| `soft_delete_comment(comment_id)` | 댓글 소프트삭제 (본인 + 관리자) |
 | `is_group_member(group_id)` | 그룹 멤버십 확인 (RLS 재귀 방지) |
 | `get_emotion_trend(days)` | 감정 트렌드 집계 (상위 5개, pct 포함) |
 | `get_recommended_posts_by_emotion(post_id, limit)` | 감정 기반 추천 (폴백 + 시간 감쇠) |
@@ -75,6 +76,7 @@ supabase-hermit/
 | `get_user_emotion_calendar(user_id, start, end)` | 사용자 감정 캘린더 히트맵 |
 | `get_emotion_timeline(days)` | 감정 분포 타임라인 |
 | `get_my_activity_summary()` | 내 활동 요약 (글/댓글/반응/스트릭) |
+| `search_posts(query, limit, offset)` | 게시글 검색 (ILIKE + pg_trgm) |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
