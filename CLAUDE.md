@@ -19,7 +19,8 @@ supabase-hermit/
 │       ├── 20260304000001_fix_reactions_data.sql      # 리액션 데이터 정합성 수정
 │       ├── 20260306000001_remove_author_column.sql    # author 컬럼 제거
 │       ├── 20260307000001_recommendation_improvements.sql  # 추천 개선 (트렌딩, 감정 폴백, 시간 감쇠)
-│       └── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
+│       ├── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
+│       └── 20260309000001_security_performance_fixes.sql  # 보안/성능: boards RLS, 인덱스, RPC 최적화, 제약조건
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
