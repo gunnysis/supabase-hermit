@@ -28,6 +28,55 @@ export const REACTION_COLOR_MAP = {
 
 export type ReactionColorKey = keyof typeof REACTION_COLOR_MAP
 
+/** 감정별 고유 컬러 매핑 (gradient + category) */
+export const EMOTION_COLOR_MAP: Record<string, {
+  family: string; gradient: [string, string]; category: 'positive' | 'negative' | 'neutral'
+}> = {
+  '고립감': { family: 'lavender', gradient: ['#F3EBFF', '#E7D7FF'], category: 'negative' },
+  '무기력': { family: 'lavender', gradient: ['#F9F5FF', '#F3EBFF'], category: 'negative' },
+  '불안':   { family: 'coral',    gradient: ['#FFF1F0', '#FFE3E0'], category: 'negative' },
+  '외로움': { family: 'lavender', gradient: ['#F3EBFF', '#DBC3FF'], category: 'negative' },
+  '슬픔':   { family: 'lavender', gradient: ['#E7D7FF', '#DBC3FF'], category: 'negative' },
+  '그리움': { family: 'peach',    gradient: ['#FFF7F0', '#FFDFC2'], category: 'neutral' },
+  '두려움': { family: 'coral',    gradient: ['#FFE3E0', '#FFC7C2'], category: 'negative' },
+  '답답함': { family: 'peach',    gradient: ['#FFEFE0', '#FFCFA3'], category: 'negative' },
+  '설렘':   { family: 'happy',    gradient: ['#FFF9E6', '#FFE799'], category: 'positive' },
+  '기대감': { family: 'mint',     gradient: ['#F0FFF9', '#D1FFF0'], category: 'positive' },
+  '안도감': { family: 'mint',     gradient: ['#D1FFF0', '#A3FFE0'], category: 'positive' },
+  '평온함': { family: 'cream',    gradient: ['#FFFEF5', '#FFF9D6'], category: 'positive' },
+  '즐거움': { family: 'happy',    gradient: ['#FFF3CC', '#FFDB66'], category: 'positive' },
+}
+
+/** 모션 프리셋 (앱/웹 공유) */
+export const MOTION = {
+  spring: {
+    gentle: { tension: 120, friction: 14 },
+    bouncy: { tension: 200, friction: 8 },
+    quick:  { tension: 300, friction: 20 },
+  },
+  timing: { fast: 150, medium: 250, slow: 400 },
+  easing: {
+    emphasized: 'cubic-bezier(0.16, 1, 0.3, 1)',
+    standard: 'cubic-bezier(0.2, 0, 0, 1)',
+  },
+} as const
+
+/** 감성적 빈 상태 메시지 */
+export const EMPTY_STATE_MESSAGES = {
+  feed: { title: '아직 이야기가 없어요', description: '첫 번째 이야기를 나눠보세요.\n당신의 마음을 들을 준비가 되어 있어요.' },
+  emotion_filter: { title: '이 감정의 이야기가 아직 없어요', description: '비슷한 마음을 느끼고 있다면,\n용기 내어 이야기해 주세요.' },
+  comments: { title: '아직 댓글이 없어요', description: '따뜻한 한마디가\n누군가에게 큰 위로가 될 수 있어요.' },
+  recommendations: { title: '추천할 이야기를 찾고 있어요', description: '곧 비슷한 마음의 이야기를\n찾아드릴게요.' },
+} as const
+
+/** 시간대별 인사말 */
+export const GREETING_MESSAGES = {
+  morning:   { greeting: '좋은 아침이에요', message: '오늘 하루도 천천히 시작해요.' },
+  afternoon: { greeting: '좋은 오후예요', message: '잠시 쉬어가도 괜찮아요.' },
+  evening:   { greeting: '편안한 저녁이에요', message: '오늘 하루 수고했어요.' },
+  night:     { greeting: '고요한 밤이에요', message: '마음이 편안해지길 바라요.' },
+} as const
+
 /** 공유 색상 팔레트 (HEX) — 각 플랫폼에서 자체 방식으로 사용 */
 export const SHARED_PALETTE = {
   happy:    { 50: '#FFF9E6', 100: '#FFF3CC', 200: '#FFE799', 300: '#FFDB66', 400: '#FFCF33', 500: '#FFC300', 600: '#CC9C00', 700: '#997500', 800: '#664E00', 900: '#332700' },

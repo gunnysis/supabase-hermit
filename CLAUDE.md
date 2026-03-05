@@ -15,9 +15,10 @@ supabase-hermit/
 │       ├── 20260302000000_fix_rls_update_policies.sql  # UPDATE 정책 수정
 │       ├── 20260303000001_core_redesign.sql       # 리액션 RPC, 소프트삭제, FK CASCADE, 제약조건
 │       ├── 20260303000002_fix_group_members_recursion.sql  # RLS 자기참조 재귀 수정
-│       └── 20260303000003_post_update_reanalysis.sql  # 글 수정 시 감정분석 자동 재실행
+│       ├── 20260303000003_post_update_reanalysis.sql  # 글 수정 시 감정분석 자동 재실행
+│       └── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
 ├── shared/
-│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI)
+│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
 ├── types/
 │   └── database.gen.ts             # 자동 생성 DB 타입 (gen-types.sh 산출물)
@@ -36,23 +37,24 @@ supabase-hermit/
 
 ## DB 스키마 요약
 
-### 테이블 (9개)
+### 테이블 (10개)
 | 테이블 | 설명 |
 |---|---|
 | `groups` | 그룹 (invite_only / request_approve / code_join) |
 | `boards` | 게시판 (public/private, 익명모드 설정) |
 | `group_members` | 그룹 멤버십 (PK: group_id + user_id) |
-| `posts` | 게시글 (소프트삭제 지원, 자동 감정 분석) |
+| `posts` | 게시글 (소프트삭제 지원, 자동 감정 분석, initial_emotions) |
 | `comments` | 댓글 (소프트삭제 지원) |
 | `reactions` | 리액션 집계 (post_id + reaction_type 별 count) |
 | `user_reactions` | 사용자별 리액션 기록 |
 | `post_analysis` | AI 감정 분석 결과 (emotions 배열) |
+| `user_preferences` | 사용자 설정 (감정 선호, 테마, 온보딩) |
 | `app_admin` | 앱 관리자 |
 
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (9개)
+### RPC 함수 (14개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER) |
@@ -64,6 +66,11 @@ supabase-hermit/
 | `get_recommended_posts_by_emotion(post_id, limit)` | 감정 기반 추천 (폴백 + 시간 감쇠) |
 | `get_trending_posts(hours, limit)` | 트렌딩 게시글 (참여도/시간 가중) |
 | `cleanup_orphan_group_members(days)` | 비활성 익명 사용자 정리 |
+| `get_posts_by_emotion(emotion, limit, offset)` | 특정 감정 게시글 필터 |
+| `get_similar_feeling_count(post_id, days)` | 비슷한 마음 사용자 수 |
+| `get_user_emotion_calendar(user_id, start, end)` | 사용자 감정 캘린더 히트맵 |
+| `get_emotion_timeline(days)` | 감정 분포 타임라인 |
+| `get_my_activity_summary()` | 내 활동 요약 (글/댓글/반응/스트릭) |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |

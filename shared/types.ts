@@ -66,6 +66,7 @@ export interface Post {
   comment_count?: number
   like_count?: number
   emotions?: string[] | null
+  initial_emotions?: string[] | null
   image_url?: string | null
 }
 
@@ -167,6 +168,7 @@ export interface CreatePostRequest {
   is_anonymous?: boolean
   display_name?: string
   image_url?: string | null
+  initial_emotions?: string[] | null
 }
 
 export interface CreateCommentRequest {
@@ -189,6 +191,28 @@ export interface UpdatePostRequest {
 
 export interface UpdateCommentRequest {
   content: string
+}
+
+export interface UserPreferences {
+  user_id: string
+  preferred_emotions: string[]
+  onboarding_completed: boolean
+  theme_preference: 'light' | 'dark' | 'system'
+  notification_enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface EmotionCalendarDay {
+  day: string
+  emotions: string[]
+  post_count: number
+}
+
+export interface EmotionTimelineEntry {
+  day: string
+  emotion: string
+  cnt: number
 }
 
 // 응답 타입
