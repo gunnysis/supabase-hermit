@@ -54,7 +54,6 @@ export interface Post {
   id: number
   title: string
   content: string
-  author: string
   author_id: string
   created_at: string
   updated_at?: string
@@ -90,7 +89,6 @@ export interface Comment {
   id: number
   post_id: number
   content: string
-  author: string
   author_id: string
   created_at: string
   updated_at?: string
@@ -149,7 +147,6 @@ export type ReactionType = (typeof REACTION_TYPES)[number]
 export interface CreatePostRequest {
   title: string
   content: string
-  author: string
   board_id?: number | null
   group_id?: number | null
   is_anonymous?: boolean
@@ -159,7 +156,6 @@ export interface CreatePostRequest {
 
 export interface CreateCommentRequest {
   content: string
-  author: string
   board_id?: number | null
   group_id?: number | null
   is_anonymous?: boolean
@@ -173,7 +169,6 @@ export interface CreateReactionRequest {
 export interface UpdatePostRequest {
   title?: string
   content?: string
-  author?: string
   image_url?: string | null
 }
 
@@ -200,7 +195,6 @@ export function isPost(obj: unknown): obj is Post {
     typeof post.id === 'number' &&
     typeof post.title === 'string' &&
     typeof post.content === 'string' &&
-    typeof post.author === 'string' &&
     typeof post.author_id === 'string' &&
     typeof post.created_at === 'string' &&
     typeof post.is_anonymous === 'boolean' &&
@@ -215,7 +209,6 @@ export function isComment(obj: unknown): obj is Comment {
     typeof comment.id === 'number' &&
     typeof comment.post_id === 'number' &&
     typeof comment.content === 'string' &&
-    typeof comment.author === 'string' &&
     typeof comment.author_id === 'string' &&
     typeof comment.created_at === 'string' &&
     typeof comment.is_anonymous === 'boolean' &&
