@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-05 (v3: UX 리디자인 — 감정 시각화, 화면 전환, Sentry 강화)
+> 최종 업데이트: 2026-03-06 (v4: 보안/안정성 강화 — XSS 새니타이징, Realtime 에러 핸들링, 메모리 누수 수정)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -234,7 +234,8 @@ src/features/posts/components/
   └─ ReactionBar.tsx         → 리액션 타입별 차별화 애니메이션 (heart=pulse, laugh=wiggle, sad=droop, surprise=pop)
 
 src/app/_layout.tsx
-  └─ 화면 전환 애니메이션 (ios_from_right, slide_from_bottom, fade 등)
+  ├─ 화면 전환 애니메이션 (ios_from_right, slide_from_bottom, fade 등)
+  └─ OTA 업데이트: Alert.alert()로 사용자 확인 후 적용 (자동 적용 → 확인 방식으로 변경)
 ```
 
 ### 웹 (web)
@@ -247,6 +248,7 @@ src/lib/constants.ts (re-export + 웹 전용)
   └─ src/lib/constants.generated.ts (generated from shared/constants.ts)
 
 src/lib/logger.ts              → Sentry 연동 로거 (dev=console, prod=Sentry)
+src/lib/sanitize.ts            → DOMPurify 기반 HTML 새니타이저 (XSS 방지)
 src/lib/view-transition.ts     → View Transitions API 래퍼
 
 src/features/posts/hooks/usePostAnalysis.ts
@@ -263,7 +265,7 @@ src/features/posts/components/
   ├─ EmotionCalendar.tsx     → EMOTION_COLOR_MAP (감정 캘린더 히트맵)
   ├─ EmotionWave.tsx         → 감정 타임라인 차트
   ├─ PostCard.tsx            → View Transitions (startViewTransition)
-  └─ PostDetailView.tsx      → View Transitions (뒤로가기)
+  └─ PostDetailView.tsx      → View Transitions (뒤로가기), sanitizeHtml (XSS 방지)
 
 src/app/my/page.tsx            → 나의 공간 (활동 요약, 감정 캘린더, 타임라인)
 src/app/global-error.tsx       → 루트 에러 바운더리 (Sentry 캡처)

@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-05
-> 마이그레이션 11개 적용 완료
+> 최종 업데이트: 2026-03-06
+> 마이그레이션 12개 적용 완료
 
 ---
 
@@ -228,12 +228,14 @@ WHERE p.deleted_at IS NULL;
 최근 N일간 감정 트렌드 상위 5개 반환.
 
 - 반환 컬럼: `emotion`, `cnt`, `pct` (비율 %)
+- 삭제된 게시글(`deleted_at IS NOT NULL`) 제외
 
 ### `get_recommended_posts_by_emotion(p_post_id BIGINT, p_limit INT DEFAULT 10) -> TABLE`
 지정 게시글과 감정이 겹치는 공개 글 추천. 감정 없으면 참여도 기반 폴백.
 
 - 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `score`
 - 정렬: 감정 겹침 × 10 + 참여도 (좋아요 + 댓글×2), 시간 감쇠 적용 (1주 → 점수 절반)
+- CTE 기반 최적화 (match_score 1회 계산, N+1 서브쿼리 제거)
 - 폴백: 감정 분석 없는 글에서도 참여도+최신순 추천 반환
 - 그룹 게시글 제외 (`group_id IS NULL`)
 
@@ -315,7 +317,7 @@ WHERE p.deleted_at IS NULL;
 ### boards
 | 정책 | 동작 | 조건 |
 |---|---|---|
-| Everyone can read boards | SELECT | 무조건 허용 |
+| boards_select | SELECT | `visibility = 'public'` OR `group_id IS NULL` OR `is_group_member(group_id)` |
 | Only app_admin can create boards | INSERT | `auth.uid() IN app_admin` |
 
 ### groups
@@ -403,8 +405,11 @@ WHERE p.deleted_at IS NULL;
 | 인덱스 | 테이블 | 컬럼 |
 |---|---|---|
 | `idx_reactions_post_id` | reactions | `post_id` |
-| `idx_boards_visibility` | boards | `visibility` |
+| `idx_user_reactions_post_type` | user_reactions | `post_id, reaction_type` |
+| `idx_app_admin_user_id` | app_admin | `user_id` |
+| `idx_boards_visibility` | boards | `visibility` (partial: WHERE group_id IS NULL) |
 | `idx_boards_group_id` | boards | `group_id` |
+| `idx_boards_name_group` | boards | `name, COALESCE(group_id, 0)` (UNIQUE) |
 | `idx_groups_owner_id` | groups | `owner_id` |
 | `idx_groups_invite_code` | groups | `invite_code` |
 | `idx_group_members_user_id` | group_members | `user_id` |
@@ -431,6 +436,9 @@ WHERE p.deleted_at IS NULL;
 | posts | `posts_title_length` | length(title) <= 200 |
 | posts | `posts_content_length` | length(content) <= 100000 |
 | comments | `comments_content_length` | length(content) <= 5000 |
+| reactions | `reactions_type_check` | reaction_type IN ('like','heart','laugh','sad','surprise') |
+| user_reactions | `user_reactions_type_check` | reaction_type IN ('like','heart','laugh','sad','surprise') |
+| boards | `idx_boards_name_group` (UNIQUE) | 그룹 내 게시판명 유니크 (name, COALESCE(group_id, 0)) |
 
 ---
 
@@ -458,8 +466,12 @@ supabase
   }, () => {
     queryClient.invalidateQueries({ queryKey: ['postAnalysis', postId] })
   })
-  .subscribe()
+  .subscribe((status, err) => {
+    if (err) logger.error(`Realtime channel error:`, err)
+  })
 ```
+
+**에러 핸들링**: 모든 `.subscribe()` 호출에 `(status, err)` 콜백 추가 — 에러 시 `logger.error`로 Sentry 전송.
 
 **Fallback 전략**: Realtime 구독 후 15초 경과해도 분석 결과 없으면 `analyze-post-on-demand` Edge Function 수동 호출.
 
@@ -521,6 +533,7 @@ supabase
 | 9 | `20260306000001_remove_author_column.sql` | author 컬럼 제거 |
 | 10 | `20260307000001_recommendation_improvements.sql` | 추천 개선 (트렌딩, 감정 폴백, pct, 시간 감쇠) |
 | 11 | `20260308000001_ux_redesign.sql` | UX 리디자인: initial_emotions, user_preferences, 감정 RPC 5개, 인덱스 2개 |
+| 12 | `20260309000001_security_performance_fixes.sql` | 보안/성능: boards RLS 가시성, 인덱스 3개, RPC 최적화 2개, CHECK 제약조건 2개, 유니크 인덱스 1개 |
 
 ---
 
