@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-04
-> 마이그레이션 7개 적용 완료
+> 최종 업데이트: 2026-03-05
+> 마이그레이션 10개 적용 완료
 
 ---
 
@@ -71,7 +71,6 @@
 | `id` | BIGSERIAL | PK | |
 | `title` | TEXT | NOT NULL | 제목 (최대 200자) |
 | `content` | TEXT | NOT NULL | 본문 (최대 100,000자) |
-| `author` | TEXT | NOT NULL | 작성자명 |
 | `author_id` | UUID | NOT NULL, FK -> auth.users | |
 | `board_id` | BIGINT | FK -> boards, ON DELETE SET NULL | 게시판 |
 | `group_id` | BIGINT | FK -> groups, ON DELETE SET NULL | 그룹 |
@@ -93,7 +92,6 @@
 | `id` | BIGSERIAL | PK | |
 | `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE | 소속 게시글 |
 | `content` | TEXT | NOT NULL | 댓글 내용 (최대 5,000자) |
-| `author` | TEXT | NOT NULL | 작성자명 |
 | `author_id` | UUID | NOT NULL, FK -> auth.users | |
 | `board_id` | BIGINT | FK -> boards, ON DELETE SET NULL | |
 | `group_id` | BIGINT | FK -> groups, ON DELETE SET NULL | |
@@ -163,7 +161,7 @@ AI 감정 분석 결과. 게시글 INSERT/UPDATE시 DB Trigger로 자동 생성.
 
 ```sql
 SELECT
-  p.id, p.title, p.content, p.author, p.author_id, p.created_at,
+  p.id, p.title, p.content, p.author_id, p.created_at,
   p.board_id, p.group_id, p.is_anonymous, p.display_name, p.member_id, p.image_url,
   COALESCE((SELECT SUM(r.count) FROM reactions r WHERE r.post_id = p.id), 0)::integer AS like_count,
   (SELECT COUNT(*)::integer FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) AS comment_count,
@@ -209,13 +207,23 @@ WHERE p.deleted_at IS NULL;
 ### `get_emotion_trend(days INT DEFAULT 7) -> TABLE`
 최근 N일간 감정 트렌드 상위 5개 반환.
 
-- 반환 컬럼: `emotion`, `cnt`
+- 반환 컬럼: `emotion`, `cnt`, `pct` (비율 %)
 
 ### `get_recommended_posts_by_emotion(p_post_id BIGINT, p_limit INT DEFAULT 10) -> TABLE`
-지정 게시글과 감정이 겹치는 공개 글 추천.
+지정 게시글과 감정이 겹치는 공개 글 추천. 감정 없으면 참여도 기반 폴백.
 
-- 정렬: 감정 일치 수 > 좋아요 수 > 최신순
+- 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `score`
+- 정렬: 감정 겹침 × 10 + 참여도 (좋아요 + 댓글×2), 시간 감쇠 적용 (1주 → 점수 절반)
+- 폴백: 감정 분석 없는 글에서도 참여도+최신순 추천 반환
 - 그룹 게시글 제외 (`group_id IS NULL`)
+
+### `get_trending_posts(p_hours INT DEFAULT 72, p_limit INT DEFAULT 10) -> TABLE`
+홈 피드 "지금 뜨는 글" 섹션용. 참여도/시간 가중 점수 기반.
+
+- 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `score`
+- 점수: `(like_count + comment_count × 2 + 1) / max(age_hours, 1)`
+- 그룹 게시글 제외 (`group_id IS NULL`)
+- 클라이언트: 72시간 조회 후 3개 미만이면 720시간으로 확장
 
 ### `cleanup_orphan_group_members(days_inactive INT DEFAULT 180) -> INT`
 장기 비활성 익명 사용자의 `group_members` 행 삭제.
@@ -319,6 +327,7 @@ WHERE p.deleted_at IS NULL;
 | `idx_posts_board_created_at` | `board_id, created_at DESC` | |
 | `idx_posts_author_id_created_at` | `author_id, created_at DESC` | |
 | `idx_posts_group_created_at` | `group_id, created_at DESC` | |
+| `idx_posts_trending` | `group_id, created_at DESC` | partial: WHERE deleted_at IS NULL |
 
 ### comments
 | 인덱스 | 컬럼 | 비고 |
@@ -447,6 +456,9 @@ supabase
 | 5 | `20260303000001_core_redesign.sql` | 리액션 RPC, 소프트삭제 RPC, FK CASCADE, 길이 제약조건, 인덱스 추가, Realtime |
 | 6 | `20260303000002_fix_group_members_recursion.sql` | `is_group_member()` 함수로 RLS 자기참조 재귀 수정 |
 | 7 | `20260303000003_post_update_reanalysis.sql` | 게시글 수정 시 감정분석 자동 재실행 트리거 |
+| 8 | `20260304000001_fix_reactions_data.sql` | 리액션 데이터 정합성 수정 |
+| 9 | `20260306000001_remove_author_column.sql` | author 컬럼 제거 |
+| 10 | `20260307000001_recommendation_improvements.sql` | 추천 개선 (트렌딩, 감정 폴백, pct, 시간 감쇠) |
 
 ---
 

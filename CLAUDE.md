@@ -52,7 +52,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (8개)
+### RPC 함수 (9개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER) |
@@ -60,8 +60,9 @@ supabase-hermit/
 | `soft_delete_post(post_id)` | 게시글 소프트삭제 |
 | `soft_delete_comment(comment_id)` | 댓글 소프트삭제 |
 | `is_group_member(group_id)` | 그룹 멤버십 확인 (RLS 재귀 방지) |
-| `get_emotion_trend(days)` | 감정 트렌드 집계 (상위 5개) |
-| `get_recommended_posts_by_emotion(post_id, limit)` | 감정 기반 추천 |
+| `get_emotion_trend(days)` | 감정 트렌드 집계 (상위 5개, pct 포함) |
+| `get_recommended_posts_by_emotion(post_id, limit)` | 감정 기반 추천 (폴백 + 시간 감쇠) |
+| `get_trending_posts(hours, limit)` | 트렌딩 게시글 (참여도/시간 가중) |
 | `cleanup_orphan_group_members(days)` | 비활성 익명 사용자 정리 |
 
 ### Edge Functions (앱 레포에서 관리)
