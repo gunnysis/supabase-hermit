@@ -187,6 +187,7 @@ export interface UpdatePostRequest {
   title?: string
   content?: string
   image_url?: string | null
+  initial_emotions?: string[] | null
 }
 
 export interface UpdateCommentRequest {
