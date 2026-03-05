@@ -216,18 +216,8 @@ export interface EmotionTimelineEntry {
   cnt: number
 }
 
-/** 검색 결과 게시글 (search_posts RPC 반환 타입) */
-export interface SearchResult {
-  id: number
-  title: string
-  board_id: number | null
-  like_count: number
-  comment_count: number
-  emotions: string[] | null
-  created_at: string
-  display_name: string
-  content_preview: string
-}
+/** 검색 결과 게시글 (search_posts RPC 반환 타입 — Post와 동일 컬럼) */
+export type SearchResult = Post
 
 // 응답 타입
 export type GetPostsResponse = Post[]
