@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-06 (v4: 보안/안정성 강화 — XSS 새니타이징, Realtime 에러 핸들링, 메모리 누수 수정)
+> 최종 업데이트: 2026-03-11 (v5: 감정분석 상태 추적, UX/UI 최적화)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -65,27 +65,26 @@ bash scripts/sync-to-projects.sh
     ▼
 [Supabase] posts INSERT 또는 UPDATE (content/title 변경)
     │
-    ├─ [DB Trigger] ──► analyze-post Edge Function
+    ├─ [DB Trigger 1] trg_create_pending_analysis → post_analysis에 pending 행 생성
+    │
+    ├─ [DB Trigger 2] analyze_post_on_insert/update → analyze-post Edge Function
     │                       │
     │                       ▼
-    │                   쿨다운 확인 (60초 이내 재분석 방지)
+    │                   status → 'analyzing' 설정
     │                       │
     │                       ▼
-    │                   Claude API (haiku-4-5)
+    │                   Gemini API (callGeminiWithRetry: 최대 2회, 1s→2s 백오프)
+    │                       │
+    │                       ├─ 성공 → status='done', emotions 저장
+    │                       └─ 실패 → status='failed', retry_count++, error_reason 기록
     │                       │
     │                       ▼
-    │                   post_analysis UPSERT (analyzed_at 갱신)
-    │                       │
-    │                       ▼
-    │                   [Realtime] postgres_changes INSERT/UPDATE
+    │                   [Realtime] postgres_changes UPDATE
     │                       │
     │                       ▼
     │                   클라이언트 자동 수신 → UI 업데이트
     │
-    └─ [15초 fallback] ──► analyze-post-on-demand Edge Function (force, 쿨다운 무시)
-                               │
-                               ▼
-                           (동일 분석 흐름)
+    └─ [클라이언트 fallback] status 기반 폴링 + on-demand 재시도
 ```
 
 ### 비용 보호 (쿨다운)
@@ -96,7 +95,19 @@ bash scripts/sync-to-projects.sh
 | Edge Function 레벨 | `analyzeAndSave` 내 60초 쿨다운 — `analyzed_at` 기준으로 60초 이내 재분석 스킵 |
 | 수동 재시도 | `analyze-post-on-demand`는 `force: true`로 쿨다운 우회 (사용자 명시 요청) |
 
-### 클라이언트 분석 대기 전략 (앱/웹 통일)
+### 클라이언트 분석 대기 전략
+
+**앱 (status 기반 폴링)**:
+
+| 단계 | 조건 | 동작 |
+|---|---|---|
+| 1 | 즉시 | `post_analysis` 초기 조회 (status, retry_count 포함) |
+| 2 | status=pending/analyzing | 3초 간격 refetchInterval 자동 폴링 |
+| 3 | 15초 후 status≠done | `analyze-post-on-demand` Edge Function 호출 |
+| 4 | status=failed & retry_count<3 | 재시도 버튼 표시 |
+| 5 | status=failed & retry_count≥3 | 최종 실패 메시지 표시 |
+
+**웹 (Realtime + 타이머)**:
 
 | 단계 | 시점 | 동작 |
 |---|---|---|
@@ -109,10 +120,10 @@ bash scripts/sync-to-projects.sh
 
 ```
 마운트
-  ├─ useQuery: postAnalysis 초기 조회
-  ├─ useEffect: Realtime 구독 (event: * — INSERT/UPDATE 모두 감지)
+  ├─ useQuery: postAnalysis 조회 (status, retry_count, error_reason 포함)
+  ├─ refetchInterval: status=pending/analyzing → 3초, 그 외 → 비활성
   └─ useEffect: 15초 타이머
-       └─ 캐시 확인 → null이면 invokeSmartService → 5초 후 invalidate
+       └─ status 확인 → pending/analyzing이면 invokeSmartService → invalidate
 ```
 
 ### 웹 구현 (`usePostAnalysis`)
@@ -128,10 +139,21 @@ bash scripts/sync-to-projects.sh
 
 ### 분석 재시도 UI
 
-| 플랫폼 | 위치 | 동작 |
-|---|---|---|
-| 앱 | `EmotionTags` 컴포넌트 (`onRetry` prop) | "🔄 분석 재시도" 버튼 → `invokeSmartService` 호출 |
-| 웹 | `PostDetailView` 헤더 영역 | "감정 분석 재시도" 버튼 (RefreshCw 아이콘) → `invokeAnalyzeOnDemand` 호출 |
+**앱 EmotionTags (status 기반)**:
+
+| 상태 | UI |
+|---|---|
+| pending / analyzing | 스켈레톤 애니메이션 |
+| done | 감정 태그 표시 |
+| failed & retry_count < 3 | "분석 재시도" 버튼 |
+| failed & retry_count >= 3 | "분석할 수 없는 글이에요" 최종 메시지 |
+
+**웹 PostDetailView**:
+
+| 상태 | UI |
+|---|---|
+| emotions 없음 | "감정 분석 재시도" 버튼 (RefreshCw 아이콘) → `invokeAnalyzeOnDemand` 호출 |
+| 재시도 중 | RefreshCw 스핀 애니메이션 |
 
 ---
 

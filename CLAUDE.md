@@ -22,9 +22,9 @@ supabase-hermit/
 │       ├── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
 │       ├── 20260309000001_security_performance_fixes.sql  # 보안/성능: boards RLS, 인덱스, RPC 최적화, 제약조건
 │       ├── 20260310000001_comprehensive_improvements.sql  # 공개 게시판, 뷰 최적화, 검색 RPC, 동시성/관리자 삭제
-│       ├── 20260311000001_fix_rpc_missing_columns.sql    # get_posts_by_emotion RPC 컬럼 보강
-│       ├── 20260311000002_fix_search_posts_columns.sql   # search_posts RPC 컬럼 보강
-│       └── 20260311000003_analysis_status_retry.sql      # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
+│       ├── 20260311000001_fix_rpc_missing_columns.sql     # get_posts_by_emotion RPC 컬럼 보강
+│       ├── 20260311000002_fix_search_posts_columns.sql    # search_posts RPC 컬럼 보강
+│       └── 20260311000003_analysis_status_retry.sql       # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -37,7 +37,8 @@ supabase-hermit/
 ├── docs/
 │   ├── SCHEMA.md                   # DB 스키마 상세 문서
 │   ├── SCRIPTS.md                  # 스크립트 사용법 상세
-│   └── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
+│   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
+│   └── DESIGN-home-ux-optimization.md  # 홈 UX/UI 최적화 설계 문서
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
 └── CLAUDE.md
@@ -176,3 +177,4 @@ npm run verify        # 레포 간 정합성 검증
 - [DB 스키마 상세](docs/SCHEMA.md) — 테이블/뷰/함수/RLS/트리거/제약조건/Edge Functions 전체
 - [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh 상세
 - [클라이언트 아키텍처](docs/CLIENT-ARCHITECTURE.md) — 앱/웹 심리분석 흐름, 공유 코드 관리, Realtime 패턴
+- [홈 UX 최적화 설계](docs/DESIGN-home-ux-optimization.md) — 홈 화면 게시글 영역 확대 설계

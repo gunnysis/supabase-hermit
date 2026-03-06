@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-07
-> 마이그레이션 13개 적용 완료
+> 최종 업데이트: 2026-03-11
+> 마이그레이션 16개 적용 완료
 
 ---
 
@@ -134,7 +134,7 @@
 ---
 
 ### `post_analysis`
-AI 감정 분석 결과. 게시글 INSERT/UPDATE시 DB Trigger로 자동 생성.
+AI 감정 분석 결과. 게시글 INSERT시 pending 행 자동 생성 (트리거), Edge Function이 분석 완료 후 상태 갱신.
 
 | 컬럼 | 타입 | 기본값 | 설명 |
 |---|---|---|---|
@@ -142,6 +142,13 @@ AI 감정 분석 결과. 게시글 INSERT/UPDATE시 DB Trigger로 자동 생성.
 | `post_id` | BIGINT | NOT NULL, FK -> posts, ON DELETE CASCADE, UNIQUE | |
 | `emotions` | TEXT[] | `'{}'` | 감정 태그 배열 |
 | `analyzed_at` | TIMESTAMPTZ | `now()` | 분석 시각 |
+| `status` | TEXT | `'done'` | 분석 상태 |
+| `retry_count` | INT | `0` | 재시도 횟수 |
+| `error_reason` | TEXT | nullable | 실패 사유 |
+| `last_attempted_at` | TIMESTAMPTZ | nullable | 마지막 시도 시각 |
+
+**status 값**: `pending` (대기), `analyzing` (분석 중), `done` (완료), `failed` (실패)
+**CHECK 제약조건**: `status IN ('pending', 'analyzing', 'done', 'failed')`
 
 ---
 
@@ -177,21 +184,32 @@ AI 감정 분석 결과. 게시글 INSERT/UPDATE시 DB Trigger로 자동 생성.
 ## 뷰
 
 ### `posts_with_like_count`
-게시글에 좋아요수, 댓글수, 감정 정보를 결합한 뷰. `security_invoker = true`.
+게시글에 좋아요수, 댓글수, 감정 정보, 분석 상태를 결합한 뷰. `security_invoker = true`.
 
 ```sql
 SELECT
   p.id, p.title, p.content, p.author_id, p.created_at,
   p.board_id, p.group_id, p.is_anonymous, p.display_name, p.member_id, p.image_url,
-  COALESCE((SELECT SUM(r.count) FROM reactions r WHERE r.post_id = p.id), 0)::integer AS like_count,
-  (SELECT COUNT(*)::integer FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) AS comment_count,
-  pa.emotions
+  p.initial_emotions,
+  COALESCE(r_agg.total_reactions, 0)::integer AS like_count,
+  COALESCE(c_agg.total_comments, 0)::integer AS comment_count,
+  pa.emotions,
+  COALESCE(pa.status, 'pending') AS analysis_status
 FROM posts p
 LEFT JOIN post_analysis pa ON pa.post_id = p.id
+LEFT JOIN (
+  SELECT r.post_id, SUM(r.count)::integer AS total_reactions
+  FROM reactions r GROUP BY r.post_id
+) r_agg ON r_agg.post_id = p.id
+LEFT JOIN (
+  SELECT c.post_id, COUNT(*)::integer AS total_comments
+  FROM comments c WHERE c.deleted_at IS NULL GROUP BY c.post_id
+) c_agg ON c_agg.post_id = p.id
 WHERE p.deleted_at IS NULL;
 ```
 
-> 주의: `updated_at`, `deleted_at`은 뷰에 포함되지 않음. 리액션/댓글 수는 서브쿼리로 계산.
+> 리액션/댓글 수는 LEFT JOIN + GROUP BY로 집계 (스칼라 서브쿼리 → JOIN 최적화 적용).
+> `initial_emotions`, `analysis_status` 포함.
 
 ---
 
@@ -257,7 +275,7 @@ WHERE p.deleted_at IS NULL;
 ### `get_posts_by_emotion(p_emotion TEXT, p_limit INT, p_offset INT) -> TABLE`
 특정 감정의 게시글 필터링. 감정 필터 바에서 사용.
 
-- 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`
+- 반환 컬럼: `id`, `title`, `content`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `author_id`, `is_anonymous`, `image_url`, `initial_emotions`, `group_id`
 - `posts_with_like_count` 뷰에서 `p_emotion = ANY(emotions)` 필터
 - 그룹 게시글 제외 (`group_id IS NULL`)
 
@@ -289,10 +307,9 @@ WHERE p.deleted_at IS NULL;
 ### `search_posts(p_query TEXT, p_limit INT DEFAULT 20, p_offset INT DEFAULT 0) -> TABLE`
 게시글 검색. 제목+내용 ILIKE 기반.
 
-- 반환 컬럼: `id`, `title`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `content_preview`
+- 반환 컬럼: `id`, `title`, `content`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `author_id`, `is_anonymous`, `image_url`, `initial_emotions`, `group_id`
 - 최소 2자 이상 검색어 필요
 - 그룹 게시글 제외 (`group_id IS NULL`)
-- `content_preview`: HTML 태그 제거 후 200자
 - pg_trgm 인덱스 활용 (가능한 경우)
 
 ---
@@ -381,6 +398,8 @@ WHERE p.deleted_at IS NULL;
 | `trg_check_daily_comment_limit` | comments | BEFORE INSERT | 일일 댓글 100건 제한 |
 | `analyze_post_on_insert` | posts | AFTER INSERT | Edge Function `analyze-post` 자동 호출 |
 | `analyze_post_on_update` | posts | AFTER UPDATE (content, title) | content/title 변경 시 `analyze-post` 재호출 (WHEN 절로 실제 변경만) |
+| `trg_create_pending_analysis` | posts | AFTER INSERT | `post_analysis`에 pending 행 자동 생성 |
+| `trg_mark_analysis_analyzing` | posts | AFTER UPDATE (content, title) | `post_analysis.status`를 analyzing으로 전환 (WHEN 절로 실제 변경만) |
 
 ---
 
@@ -428,6 +447,7 @@ WHERE p.deleted_at IS NULL;
 | `idx_group_members_left_at` | group_members | `left_at` (partial: left_at IS NOT NULL) |
 | `idx_post_analysis_emotions` | post_analysis | `emotions` (GIN) |
 | `idx_post_analysis_analyzed_at` | post_analysis | `analyzed_at DESC` |
+| `idx_post_analysis_status` | post_analysis | `status` (partial: WHERE status IN ('pending', 'failed')) |
 
 ---
 
@@ -544,6 +564,10 @@ supabase
 | 10 | `20260307000001_recommendation_improvements.sql` | 추천 개선 (트렌딩, 감정 폴백, pct, 시간 감쇠) |
 | 11 | `20260308000001_ux_redesign.sql` | UX 리디자인: initial_emotions, user_preferences, 감정 RPC 5개, 인덱스 2개 |
 | 12 | `20260309000001_security_performance_fixes.sql` | 보안/성능: boards RLS 가시성, 인덱스 3개, RPC 최적화 2개, CHECK 제약조건 2개, 유니크 인덱스 1개 |
+| 13 | `20260310000001_comprehensive_improvements.sql` | 공개 게시판(id=12), 뷰 LEFT JOIN 최적화, 검색 RPC, advisory lock, 관리자 삭제 |
+| 14 | `20260311000001_fix_rpc_missing_columns.sql` | get_posts_by_emotion RPC에 content/author_id/image_url 등 누락 컬럼 추가 |
+| 15 | `20260311000002_fix_search_posts_columns.sql` | search_posts RPC에 동일 누락 컬럼 추가 (content_preview 제거) |
+| 16 | `20260311000003_analysis_status_retry.sql` | 감정분석 상태 추적: status/retry_count/error_reason 컬럼, pending 자동 생성/analyzing 전환 트리거, 뷰에 analysis_status |
 
 ---
 
