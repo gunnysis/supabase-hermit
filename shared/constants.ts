@@ -67,6 +67,7 @@ export const EMPTY_STATE_MESSAGES = {
   emotion_filter: { title: '이 감정의 이야기가 아직 없어요', description: '비슷한 마음을 느끼고 있다면,\n용기 내어 이야기해 주세요.' },
   comments: { title: '아직 댓글이 없어요', description: '따뜻한 한마디가\n누군가에게 큰 위로가 될 수 있어요.' },
   recommendations: { title: '추천할 이야기를 찾고 있어요', description: '곧 비슷한 마음의 이야기를\n찾아드릴게요.' },
+  search: { title: '검색 결과가 없어요', description: '다른 키워드로 검색하거나\n감정으로 탐색해보세요.' },
 } as const
 
 /** 시간대별 인사말 */

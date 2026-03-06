@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
 > 최종 업데이트: 2026-03-11
-> 마이그레이션 16개 적용 완료
+> 마이그레이션 17개 적용 완료
 
 ---
 
@@ -305,12 +305,25 @@ WHERE p.deleted_at IS NULL;
 - 현재 사용자의 글/댓글/받은 리액션 수 + 연속 활동 일수
 
 ### `search_posts(p_query TEXT, p_limit INT DEFAULT 20, p_offset INT DEFAULT 0) -> TABLE`
-게시글 검색. 제목+내용 ILIKE 기반.
+게시글 검색 (v1, 레거시). 제목+내용 ILIKE 기반.
 
 - 반환 컬럼: `id`, `title`, `content`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `author_id`, `is_anonymous`, `image_url`, `initial_emotions`, `group_id`
 - 최소 2자 이상 검색어 필요
 - 그룹 게시글 제외 (`group_id IS NULL`)
 - pg_trgm 인덱스 활용 (가능한 경우)
+- **Deprecated**: `search_posts_v2` 사용 권장
+
+### `search_posts_v2(p_query TEXT, p_emotion TEXT, p_sort TEXT, p_limit INT, p_offset INT) -> TABLE`
+게시글 검색 (v2). 풀텍스트 검색 + 관련도 정렬 + 하이라이트 + 서버 사이드 감정 필터.
+
+- 반환 컬럼: `id`, `title`, `content`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `author_id`, `is_anonymous`, `image_url`, `initial_emotions`, `group_id`, **`title_highlight`**, **`content_highlight`**, **`relevance_score`**
+- `p_emotion`: 감정 필터 (NULL이면 전체)
+- `p_sort`: `'relevance'` (관련도) | `'recent'` (최신) | `'popular'` (인기)
+- 풀텍스트: `to_tsvector('simple')` + ILIKE 하이브리드
+- 하이라이트: `ts_headline` — `<<` `>>` 구분자
+- 관련도: `ts_rank` + 제목 매칭 가중치
+- 최소 2자 이상 검색어 필요
+- 그룹 게시글 제외 (`group_id IS NULL`)
 
 ---
 
@@ -419,6 +432,7 @@ WHERE p.deleted_at IS NULL;
 | `idx_posts_group_created_at` | `group_id, created_at DESC` | |
 | `idx_posts_trending` | `group_id, created_at DESC` | partial: WHERE deleted_at IS NULL |
 | `idx_posts_author_deleted_created` | `author_id, created_at DESC` | partial: WHERE deleted_at IS NULL |
+| `idx_posts_fts` | `to_tsvector('simple', title) \|\| to_tsvector('simple', content)` | GIN, partial: WHERE deleted_at IS NULL AND group_id IS NULL |
 
 ### comments
 | 인덱스 | 컬럼 | 비고 |
@@ -568,6 +582,7 @@ supabase
 | 14 | `20260311000001_fix_rpc_missing_columns.sql` | get_posts_by_emotion RPC에 content/author_id/image_url 등 누락 컬럼 추가 |
 | 15 | `20260311000002_fix_search_posts_columns.sql` | search_posts RPC에 동일 누락 컬럼 추가 (content_preview 제거) |
 | 16 | `20260311000003_analysis_status_retry.sql` | 감정분석 상태 추적: status/retry_count/error_reason 컬럼, pending 자동 생성/analyzing 전환 트리거, 뷰에 analysis_status |
+| 17 | `20260312000001_search_v2.sql` | 검색 v2: 풀텍스트(tsvector) + 관련도 정렬 + 하이라이트 + 서버 사이드 감정 필터, tsvector GIN 인덱스 |
 
 ---
 

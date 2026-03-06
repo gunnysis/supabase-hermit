@@ -218,8 +218,29 @@ export interface EmotionTimelineEntry {
   cnt: number
 }
 
-/** 검색 결과 게시글 (search_posts RPC 반환 타입 — Post와 동일 컬럼) */
-export type SearchResult = Post
+/** 검색 정렬 옵션 */
+export type SearchSort = 'relevance' | 'recent' | 'popular'
+
+/** 검색 결과 게시글 (search_posts_v2 RPC 반환 타입) */
+export interface SearchResult {
+  id: number
+  title: string
+  content: string
+  board_id: number | null
+  like_count: number
+  comment_count: number
+  emotions: string[] | null
+  created_at: string
+  display_name: string
+  author_id: string
+  is_anonymous: boolean
+  image_url: string | null
+  initial_emotions: string[] | null
+  group_id: number | null
+  title_highlight: string
+  content_highlight: string
+  relevance_score: number
+}
 
 // 응답 타입
 export type GetPostsResponse = Post[]

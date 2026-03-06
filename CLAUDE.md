@@ -24,7 +24,8 @@ supabase-hermit/
 │       ├── 20260310000001_comprehensive_improvements.sql  # 공개 게시판, 뷰 최적화, 검색 RPC, 동시성/관리자 삭제
 │       ├── 20260311000001_fix_rpc_missing_columns.sql     # get_posts_by_emotion RPC 컬럼 보강
 │       ├── 20260311000002_fix_search_posts_columns.sql    # search_posts RPC 컬럼 보강
-│       └── 20260311000003_analysis_status_retry.sql       # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
+│       ├── 20260311000003_analysis_status_retry.sql       # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
+│       └── 20260312000001_search_v2.sql                  # 검색 v2: 풀텍스트 + 관련도 + 하이라이트 + 감정 필터
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -63,7 +64,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (15개)
+### RPC 함수 (16개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -80,7 +81,8 @@ supabase-hermit/
 | `get_user_emotion_calendar(user_id, start, end)` | 사용자 감정 캘린더 히트맵 |
 | `get_emotion_timeline(days)` | 감정 분포 타임라인 |
 | `get_my_activity_summary()` | 내 활동 요약 (글/댓글/반응/스트릭) |
-| `search_posts(query, limit, offset)` | 게시글 검색 (ILIKE + pg_trgm) |
+| `search_posts(query, limit, offset)` | 게시글 검색 v1 (ILIKE, deprecated) |
+| `search_posts_v2(query, emotion, sort, limit, offset)` | 게시글 검색 v2 (풀텍스트 + 관련도 + 하이라이트) |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
