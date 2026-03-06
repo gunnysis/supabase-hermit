@@ -14,7 +14,7 @@ export type MemberRole = 'owner' | 'member' | 'moderator'
 export type MemberStatus = 'pending' | 'approved' | 'rejected' | 'left'
 
 /** 감정 분석 상태 */
-export type AnalysisStatus = 'pending' | 'completed' | 'failed' | 'skipped'
+export type AnalysisStatus = 'pending' | 'analyzing' | 'done' | 'failed'
 
 export interface Group {
   id: number
@@ -81,9 +81,11 @@ export interface PostAnalysis {
   id: number
   post_id: number
   emotions: string[]
-  analyzed_at: string
-  status?: AnalysisStatus
-  confidence?: number
+  analyzed_at: string | null
+  status: AnalysisStatus
+  retry_count: number
+  error_reason: string | null
+  last_attempted_at: string | null
 }
 
 export interface Comment {

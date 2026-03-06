@@ -21,7 +21,10 @@ supabase-hermit/
 │       ├── 20260307000001_recommendation_improvements.sql  # 추천 개선 (트렌딩, 감정 폴백, 시간 감쇠)
 │       ├── 20260308000001_ux_redesign.sql             # UX 리디자인: initial_emotions, user_preferences, 감정 RPC들
 │       ├── 20260309000001_security_performance_fixes.sql  # 보안/성능: boards RLS, 인덱스, RPC 최적화, 제약조건
-│       └── 20260310000001_comprehensive_improvements.sql  # 공개 게시판, 뷰 최적화, 검색 RPC, 동시성/관리자 삭제
+│       ├── 20260310000001_comprehensive_improvements.sql  # 공개 게시판, 뷰 최적화, 검색 RPC, 동시성/관리자 삭제
+│       ├── 20260311000001_fix_rpc_missing_columns.sql    # get_posts_by_emotion RPC 컬럼 보강
+│       ├── 20260311000002_fix_search_posts_columns.sql   # search_posts RPC 컬럼 보강
+│       └── 20260311000003_analysis_status_retry.sql      # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
 │   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -52,7 +55,7 @@ supabase-hermit/
 | `comments` | 댓글 (소프트삭제 지원) |
 | `reactions` | 리액션 집계 (post_id + reaction_type 별 count) |
 | `user_reactions` | 사용자별 리액션 기록 |
-| `post_analysis` | AI 감정 분석 결과 (emotions 배열) |
+| `post_analysis` | AI 감정 분석 결과 (emotions 배열, status/retry_count/error_reason) |
 | `user_preferences` | 사용자 설정 (감정 선호, 테마, 온보딩) |
 | `app_admin` | 앱 관리자 |
 
@@ -81,8 +84,8 @@ supabase-hermit/
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
 |---|---|---|
-| `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, 60초 쿨다운) |
-| `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback + 재시도, 쿨다운 우회) |
+| `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, 60초 쿨다운, 서버 재시도 2회) |
+| `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback + 재시도, 쿨다운 우회, 서버 재시도 2회) |
 
 ## 워크플로
 
