@@ -25,10 +25,13 @@ supabase-hermit/
 │       ├── 20260311000001_fix_rpc_missing_columns.sql     # get_posts_by_emotion RPC 컬럼 보강
 │       ├── 20260311000002_fix_search_posts_columns.sql    # search_posts RPC 컬럼 보강
 │       ├── 20260311000003_analysis_status_retry.sql       # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
-│       └── 20260312000001_search_v2.sql                  # 검색 v2: 풀텍스트 + 관련도 + 하이라이트 + 감정 필터
+│       ├── 20260312000001_search_v2.sql                  # 검색 v2: 풀텍스트 + 관련도 + 하이라이트 + 감정 필터
+│       ├── 20260313000001_admin_groups_rls_fix.sql       # groups UPDATE/DELETE RLS + invite_code CHECK
+│       └── 20260314000001_drop_search_posts_v1.sql       # search_posts v1 제거 (deprecated)
 ├── shared/
-│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES)
-│   └── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
+│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_HIGHLIGHT, SEARCH_CONFIG 등)
+│   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
+│   └── utils.ts                    # 공유 순수 함수 (generateInviteCode, validateGroupInput)
 ├── types/
 │   └── database.gen.ts             # 자동 생성 DB 타입 (gen-types.sh 산출물)
 ├── scripts/
@@ -64,7 +67,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (16개)
+### RPC 함수 (15개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -81,7 +84,6 @@ supabase-hermit/
 | `get_user_emotion_calendar(user_id, start, end)` | 사용자 감정 캘린더 히트맵 |
 | `get_emotion_timeline(days)` | 감정 분포 타임라인 |
 | `get_my_activity_summary()` | 내 활동 요약 (글/댓글/반응/스트릭) |
-| `search_posts(query, limit, offset)` | 게시글 검색 v1 (ILIKE, deprecated) |
 | `search_posts_v2(query, emotion, sort, limit, offset)` | 게시글 검색 v2 (풀텍스트 + 관련도 + 하이라이트) |
 
 ### Edge Functions (앱 레포에서 관리)
@@ -144,7 +146,7 @@ npm run verify        # 레포 간 정합성 검증
 
 ## 동기화 대상
 
-`sync-to-projects.sh`는 다음 5가지를 앱/웹 레포에 복사한다:
+`sync-to-projects.sh`는 다음 6가지를 앱/웹 레포에 복사한다:
 
 | 소스 (중앙) | 앱 대상 | 웹 대상 |
 |---|---|---|
@@ -153,6 +155,7 @@ npm run verify        # 레포 간 정합성 검증
 | `types/database.gen.ts` | `src/types/database.gen.ts` | `src/types/database.gen.ts` |
 | `shared/constants.ts` | `src/shared/lib/constants.generated.ts` | `src/lib/constants.generated.ts` |
 | `shared/types.ts` | `src/types/database.types.ts` | `src/types/database.types.ts` |
+| `shared/utils.ts` | `src/shared/lib/utils.generated.ts` | `src/lib/utils.generated.ts` |
 
 옵션: `--app` (앱만), `--web` (웹만), `--dry` (미리보기)
 
@@ -166,7 +169,7 @@ npm run verify        # 레포 간 정합성 검증
 - **리액션은 RPC만 사용** — `reactions`/`user_reactions` 직접 쓰기 정책 제거됨. `toggle_reaction()` 사용
 - **삭제는 소프트삭제** — `posts`, `comments`의 hard DELETE 정책 제거. `soft_delete_post()`, `soft_delete_comment()` 사용
 - **멱등 마이그레이션** — `IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP POLICY IF EXISTS` 패턴 적용
-- **공유 상수/타입은 `shared/`에서만 수정** — `shared/constants.ts`, `shared/types.ts`는 sync로 앱/웹에 배포. 앱/웹의 generated 파일 직접 수정 금지
+- **공유 상수/타입/유틸은 `shared/`에서만 수정** — `shared/constants.ts`, `shared/types.ts`, `shared/utils.ts`는 sync로 앱/웹에 배포. 앱/웹의 generated 파일 직접 수정 금지. `utils.ts`에는 외부 import 없는 순수 함수만 추가할 것
 
 ## 연결 정보
 
