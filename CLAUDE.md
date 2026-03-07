@@ -27,7 +27,9 @@ supabase-hermit/
 │       ├── 20260311000003_analysis_status_retry.sql       # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
 │       ├── 20260312000001_search_v2.sql                  # 검색 v2: 풀텍스트 + 관련도 + 하이라이트 + 감정 필터
 │       ├── 20260313000001_admin_groups_rls_fix.sql       # groups UPDATE/DELETE RLS + invite_code CHECK
-│       └── 20260314000001_drop_search_posts_v1.sql       # search_posts v1 제거 (deprecated)
+│       ├── 20260314000001_drop_search_posts_v1.sql       # search_posts v1 제거 (deprecated)
+│       ├── 20260315000001_search_v2_ilike_escape.sql    # search_posts_v2 ILIKE 와일드카드 이스케이프
+│       └── 20260315000002_fix_search_v2_column_order.sql # search_posts_v2 CTE 컬럼 순서 수정
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_HIGHLIGHT, SEARCH_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
