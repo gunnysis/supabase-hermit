@@ -78,6 +78,47 @@ export const GREETING_MESSAGES = {
   night:     { greeting: '고요한 밤이에요', message: '마음이 편안해지길 바라요.' },
 } as const
 
+/** 관리자 관련 상수 */
+export const ADMIN_CONSTANTS = {
+  INVITE_CODE_MIN_LENGTH: 4,
+  INVITE_CODE_MAX_LENGTH: 50,
+  GROUP_NAME_MAX_LENGTH: 100,
+  GROUP_DESC_MAX_LENGTH: 500,
+} as const
+
+/** 삭제 확인 메시지 (앱/웹 통일) */
+export const CONFIRM_MESSAGES = {
+  deleteGroup: '그룹의 모든 게시글과 댓글이 함께 삭제됩니다.',
+} as const
+
+/** 초대 코드 자동 생성 (6자리 영숫자 대문자) */
+export function generateInviteCode(): string {
+  return Math.random().toString(36).slice(2, 8).toUpperCase()
+}
+
+/** 그룹 생성 입력 검증 — 유효하면 null, 에러 시 메시지 반환 */
+export function validateGroupInput(input: {
+  name: string
+  inviteCode?: string
+  description?: string
+}): string | null {
+  const name = input.name.trim()
+  if (!name) return '그룹 이름을 입력해주세요.'
+  if (name.length > ADMIN_CONSTANTS.GROUP_NAME_MAX_LENGTH) return `그룹 이름은 ${ADMIN_CONSTANTS.GROUP_NAME_MAX_LENGTH}자 이내로 입력해주세요.`
+
+  if (input.inviteCode?.trim()) {
+    const code = input.inviteCode.trim()
+    if (code.length < ADMIN_CONSTANTS.INVITE_CODE_MIN_LENGTH) return `초대 코드는 ${ADMIN_CONSTANTS.INVITE_CODE_MIN_LENGTH}자 이상이어야 합니다.`
+    if (code.length > ADMIN_CONSTANTS.INVITE_CODE_MAX_LENGTH) return `초대 코드는 ${ADMIN_CONSTANTS.INVITE_CODE_MAX_LENGTH}자 이내로 입력해주세요.`
+  }
+
+  if (input.description && input.description.length > ADMIN_CONSTANTS.GROUP_DESC_MAX_LENGTH) {
+    return `설명은 ${ADMIN_CONSTANTS.GROUP_DESC_MAX_LENGTH}자 이내로 입력해주세요.`
+  }
+
+  return null
+}
+
 /** 공유 색상 팔레트 (HEX) — 각 플랫폼에서 자체 방식으로 사용 */
 export const SHARED_PALETTE = {
   happy:    { 50: '#FFF9E6', 100: '#FFF3CC', 200: '#FFE799', 300: '#FFDB66', 400: '#FFCF33', 500: '#FFC300', 600: '#CC9C00', 700: '#997500', 800: '#664E00', 900: '#332700' },

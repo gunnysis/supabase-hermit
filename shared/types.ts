@@ -161,6 +161,13 @@ export interface TrendingPost {
 export const REACTION_TYPES = ['like', 'heart', 'laugh', 'sad', 'surprise'] as const
 export type ReactionType = (typeof REACTION_TYPES)[number]
 
+/** 그룹 생성 입력 (앱/웹 공통) */
+export interface CreateGroupInput {
+  name: string            // 1~100자
+  inviteCode?: string     // 4~50자, 선택 (미입력 시 자동 생성)
+  description?: string    // 0~500자
+}
+
 // 요청 타입
 export interface CreatePostRequest {
   title: string
