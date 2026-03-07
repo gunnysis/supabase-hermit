@@ -41,6 +41,7 @@ CENTRAL_CONFIG="$CENTRAL/supabase/config.toml"
 CENTRAL_TYPES="$CENTRAL/types/database.gen.ts"
 CENTRAL_SHARED_CONSTANTS="$CENTRAL/shared/constants.ts"
 CENTRAL_SHARED_TYPES="$CENTRAL/shared/types.ts"
+CENTRAL_SHARED_UTILS="$CENTRAL/shared/utils.ts"
 
 echo "=== 은둔마을 Supabase 동기화 ==="
 echo "중앙: $CENTRAL"
@@ -54,7 +55,8 @@ for src_label_pair in \
   "$CENTRAL_CONFIG:config.toml" \
   "$CENTRAL_TYPES:database.gen.ts" \
   "$CENTRAL_SHARED_CONSTANTS:shared/constants.ts" \
-  "$CENTRAL_SHARED_TYPES:shared/types.ts"; do
+  "$CENTRAL_SHARED_TYPES:shared/types.ts" \
+  "$CENTRAL_SHARED_UTILS:shared/utils.ts"; do
   src="${src_label_pair%%:*}"
   label="${src_label_pair##*:}"
   if [ ! -e "$src" ]; then
@@ -193,15 +195,17 @@ sync_shared() {
 
   echo "  [shared]"
 
-  # 앱: src/shared/lib/constants.generated.ts, src/types/database.types.ts
-  # 웹: src/lib/constants.generated.ts, src/types/database.types.ts
-  local constants_target types_target
+  # 앱: src/shared/lib/constants.generated.ts, src/types/database.types.ts, src/shared/lib/utils.generated.ts
+  # 웹: src/lib/constants.generated.ts, src/types/database.types.ts, src/lib/utils.generated.ts
+  local constants_target types_target utils_target
   if [ "$name" = "앱" ]; then
     constants_target="$repo/src/shared/lib/constants.generated.ts"
     types_target="$repo/src/types/database.types.ts"
+    utils_target="$repo/src/shared/lib/utils.generated.ts"
   else
     constants_target="$repo/src/lib/constants.generated.ts"
     types_target="$repo/src/types/database.types.ts"
+    utils_target="$repo/src/lib/utils.generated.ts"
   fi
 
   # 상수 파일
@@ -242,6 +246,24 @@ sync_shared() {
     fi
   else
     echo "    !! shared/types.ts 없음, 건너뜀"
+  fi
+
+  # 유틸 파일
+  if [ -f "$CENTRAL_SHARED_UTILS" ]; then
+    local target_dir="$(dirname "$utils_target")"
+    [ -d "$target_dir" ] || { $DRY_RUN || mkdir -p "$target_dir"; }
+
+    if [ ! -f "$utils_target" ]; then
+      echo "    + 추가: $(basename "$utils_target")"
+      $DRY_RUN || cp "$CENTRAL_SHARED_UTILS" "$utils_target"
+      TOTAL_CHANGES=$((TOTAL_CHANGES + 1))
+    elif ! diff -q "$CENTRAL_SHARED_UTILS" "$utils_target" > /dev/null 2>&1; then
+      echo "    ~ 덮어쓰기: $(basename "$utils_target")"
+      $DRY_RUN || cp "$CENTRAL_SHARED_UTILS" "$utils_target"
+      TOTAL_CHANGES=$((TOTAL_CHANGES + 1))
+    else
+      echo "    = utils 동일"
+    fi
   fi
 }
 
