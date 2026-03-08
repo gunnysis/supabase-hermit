@@ -29,7 +29,8 @@ supabase-hermit/
 │       ├── 20260313000001_admin_groups_rls_fix.sql       # groups UPDATE/DELETE RLS + invite_code CHECK
 │       ├── 20260314000001_drop_search_posts_v1.sql       # search_posts v1 제거 (deprecated)
 │       ├── 20260315000001_search_v2_ilike_escape.sql    # search_posts_v2 ILIKE 와일드카드 이스케이프
-│       └── 20260315000002_fix_search_v2_column_order.sql # search_posts_v2 CTE 컬럼 순서 수정
+│       ├── 20260315000002_fix_search_v2_column_order.sql # search_posts_v2 CTE 컬럼 순서 수정
+│       └── 20260316000001_cleanup_stuck_analyses.sql     # 감정분석 stuck 상태 자동 정리 함수
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_HIGHLIGHT, SEARCH_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -69,7 +70,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (15개)
+### RPC 함수 (16개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -87,6 +88,7 @@ supabase-hermit/
 | `get_emotion_timeline(days)` | 감정 분포 타임라인 |
 | `get_my_activity_summary()` | 내 활동 요약 (글/댓글/반응/스트릭) |
 | `search_posts_v2(query, emotion, sort, limit, offset)` | 게시글 검색 v2 (풀텍스트 + 관련도 + 하이라이트) |
+| `cleanup_stuck_analyses()` | 5분+ stuck 감정분석 자동 failed 전환 |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
