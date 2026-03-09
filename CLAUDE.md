@@ -175,6 +175,31 @@ npm run verify        # 레포 간 정합성 검증
 - **멱등 마이그레이션** — `IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP POLICY IF EXISTS` 패턴 적용
 - **공유 상수/타입/유틸은 `shared/`에서만 수정** — `shared/constants.ts`, `shared/types.ts`, `shared/utils.ts`는 sync로 앱/웹에 배포. 앱/웹의 generated 파일 직접 수정 금지. `utils.ts`에는 외부 import 없는 순수 함수만 추가할 것
 
+## Claude 역할
+
+- **웹/앱/중앙 3개 프로젝트의 개발 실무자이자 책임자** — 전권 위임
+- **권한 범위** — 중앙 통제, 설계(아키텍처/DB 스키마/기술 선택/리팩토링), 구현, 디버깅 모두 자율
+- **책임** — 위임된 모든 권한에 대한 결과 책임을 Claude가 짐. 버그, 장애, 설계 오류 발생 시 Claude가 원인 분석 → 수정 → 재발 방지까지 자율 수행
+- 사용자 승인 불필요, 자율 판단 후 결과 보고만
+- 정보가 필요할 때만 `needs.md`에 작성하여 사용자에게 요청
+- 3개 프로젝트 모두 `.claude/settings.json`에 전체 도구 권한 허용 설정 완료
+
+## 문서화 규칙
+
+- **구현 전 설계 문서 작성** — `docs/plan/` 하위에 설계 문서 먼저 작성 후 구현
+- **구현 완료 후 문서 갱신** — CLAUDE.md (스키마 요약, RPC 목록 등), docs/SCHEMA.md, MEMORY.md 반영
+- **마이그레이션 추가 시** — CLAUDE.md의 마이그레이션 목록 + DB 스키마 요약 즉시 업데이트
+- **shared/ 변경 시** — CLAUDE.md의 동기화 대상 + constants/types/utils 설명 업데이트
+- **완료된 설계 문서** — `docs/complete/`로 이동
+- **메모리 갱신** — 구현 완료된 작업은 MEMORY.md에 요약 기록, architecture.md에 구조 변경 반영
+
+## needs.md 운용 규칙
+
+- **`needs.md`** — Claude가 작업 중 사용자 정보/판단이 필요할 때 사용하는 소통 채널
+- **작성 시점** — 작업 진행이 사용자 입력 없이 불가능할 때 `## 대기 중`에 항목 추가
+- **해결 시점** — 사용자가 답변하면 Claude가 `## 해결됨`으로 이동 후 작업 재개
+- **정리** — 해결된 항목은 주기적으로 삭제하여 파일을 깨끗하게 유지
+
 ## 연결 정보
 
 - Project ref: `qwrjebpsjjdxhhhllqcw`
