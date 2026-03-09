@@ -7,6 +7,7 @@
 > 설계 보강: 2026-03-08 | 프론트엔드 코드 조사 완료 — Phase 2/3/5/7/12 실제 라인 매핑 추가
 > 디자인 설계: 2026-03-08 | 앱/웹 UI 전수 조사 — Phase 14 (앱 디자인) + Phase 15 (웹 디자인/접근성) 추가
 > **리뷰 반영: 2026-03-09 | 개발 책임자 리뷰 기반 재구성 ([REVIEW-dev-lead-analysis.md](../memo/REVIEW-dev-lead-analysis.md))**
+> **2차 리뷰 반영: 2026-03-09 | 구현 판단 개선 — 멱등성, CSP unsafe-eval, reactions 사전확인, Sentry Alert, 모니터링, MOTION 시각확인, NativeWind 호환**
 > **구현 계획: 2026-03-09 | 실행 설계서 → [DESIGN-maintenance-v3-execution.md](DESIGN-maintenance-v3-execution.md)**
 
 ---
@@ -146,35 +147,20 @@
 
 ## 2.4 외부 서비스 플랜 현황
 
-### Sentry — 현재 Developer (무료) 플랜
+### Sentry — Developer (무료) 유지
 
-| 항목 | Developer (무료) | Team ($26/mo) | Business ($80/mo) |
-|---|---|---|---|
-| **에러 쿼터** | 5,000건/월 | 50,000건/월 | 100,000건/월 |
-| **사용자** | 1명 | 무제한 | 무제한 |
-| **알림** | 이메일만 | Slack/PagerDuty 등 | + 이상 탐지 |
-| **서드파티 연동** | 없음 | GitHub, Slack 등 | + SAML/SCIM |
-| **커스텀 대시보드** | 10개 | 20개 | 무제한 |
-| **Fingerprint Rules** | 사용 가능 | 사용 가능 | 사용 가능 |
-| **Discover (이벤트 쿼리)** | 제한적 | 사용 가능 | 사용 가능 |
-| **Seer AI 디버깅** | 없음 | 구독 시 사용 가능 | 구독 시 사용 가능 |
+> 현재 사용자 1명 → 5,000건/월 쿼터 충분. 업그레이드 불필요.
 
-**현재 영향:**
-- Phase 3/5에서 에러 처리를 개선하면 더 많은 에러가 Sentry에 보고됨 → 5,000건/월 쿼터 소진 가능
-- Slack 알림 불가 → 에러 발생 시 이메일만 수신, 실시간 대응 어려움
-- GitHub 연동 불가 → 이슈 자동 생성/링크 불가
+| 항목 | Developer (현재) | 비고 |
+|---|---|---|
+| 에러 쿼터 | 5,000건/월 | 사용자 1명 기준 충분 |
+| Fingerprint Rules | 사용 가능 | 그루핑 조정 자유 |
+| Rate Limiting | 사용 가능 | 쿼터 보호 가능 |
 
-**Team 플랜 업그레이드 판단 기준:**
-
-| 상황 | 권장 |
-|---|---|
-| 월 에러 5,000건 초과 접근 시 | **즉시 업그레이드** — 쿼터 초과 시 에러가 누락되어 장애 원인 파악 불가 |
-| Slack 알림 필요 시 (실시간 에러 모니터링) | **업그레이드 권장** — 이메일 알림은 대응 지연 |
-| Release 2(Phase 3 에러 처리 통일) 배포 후 에러 패턴 변경 추적 시 | **업그레이드 권장** — Discover로 에러 쿼리/비교 가능 |
-| 사용자 증가로 에러량 급증 시 | **업그레이드 필수** |
-
-> Sentry 설정(Fingerprint Rules, Merge/Unmerge, Rate Limiting)은 무료 플랜에서도 사용 가능.
-> 플랜 업그레이드 없이도 그루핑 조정은 자유롭게 가능.
+**Team 업그레이드 조건** (필요 시에만):
+- 월 에러 2,500건 초과 (쿼터 50%) → Rate Limiting 설정 검토
+- 월 에러 5,000건 근접 → Team ($26/mo) 업그레이드 검토
+- 사용자 증가로 에러 급증 → Team 업그레이드 필수
 
 ### Vercel — 현재 Hobby (무료) 플랜
 
@@ -485,7 +471,9 @@ async headers() {
 }
 ```
 
-> `unsafe-inline`/`unsafe-eval`은 Next.js 빌드 특성상 필요. nonce 기반 CSP는 Next.js 15+ 에서만 안정 지원.
+> `unsafe-inline`은 Next.js 빌드 특성상 필요.
+> `unsafe-eval`은 프로덕션에서 불필요할 수 있음 — 먼저 제거 후 빌드/실행하여 CSP 위반 에러 확인. 에러 없으면 제거 유지.
+> nonce 기반 CSP는 v2 Phase C (Backlog).
 
 **변경 파일:** `next.config.ts` — `headers()` 함수 추가
 
@@ -493,10 +481,8 @@ async headers() {
 
 ### Phase 5: 웹 에러 처리 & Sentry 보강 (M4, M5)
 
-> **Sentry 플랜 참고** (§2.4): 현재 Developer 플랜 5,000건/월.
-> Phase 3 + 5에서 에러 로깅을 개선하면 더 많은 에러가 Sentry에 보고됨.
-> 배포 후 Sentry 대시보드에서 월간 쿼터 사용량 모니터링 필요.
-> 5,000건 근접 시 Team 플랜($26/mo, 50K건) 업그레이드 또는 Rate Limiting 설정 검토.
+> 현재 Developer 무료 플랜 (5,000건/월) 유지. 사용자 1명 기준 쿼터 충분.
+> 배포 후 쿼터 50% (2,500건) 초과 시 §2.4 기준에 따라 판단.
 
 #### 5a. 웹 API 에러 로깅 개선 (M4)
 
@@ -656,6 +642,10 @@ DROP POLICY IF EXISTS "reactions_delete" ON public.reactions;
 DROP POLICY IF EXISTS "user_reactions_insert" ON public.user_reactions;
 DROP POLICY IF EXISTS "user_reactions_delete" ON public.user_reactions;
 ```
+
+**사전 확인** (v3 조사 5):
+앱/웹에서 `from('reactions')`, `from('user_reactions')` 직접 INSERT/UPDATE/DELETE 코드가 없는지 검색.
+발견 시 RPC 호출로 교체 후 RLS 제거.
 
 **영향 분석:**
 - `toggle_reaction()`은 SECURITY DEFINER → RLS 우회 → 영향 없음 ✓
@@ -948,16 +938,23 @@ description TEXT,  -- ← 길이 제한 없음
 **마이그레이션 추가 (독립 마이그레이션 — Phase 6과 분리, Release 4):**
 ```sql
 -- 20260318000001_boards_constraints.sql ← Phase 12a 단독
+-- 멱등성 확보: 이미 존재하면 무시
 
 -- boards.description 길이 제한 (500자)
-ALTER TABLE public.boards
-  ADD CONSTRAINT boards_description_length
-  CHECK (description IS NULL OR char_length(description) <= 500);
+DO $$ BEGIN
+  ALTER TABLE public.boards
+    ADD CONSTRAINT boards_description_length
+    CHECK (description IS NULL OR char_length(description) <= 500);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- boards.name 길이 제한 (100자) — 기존 없음, 함께 추가
-ALTER TABLE public.boards
-  ADD CONSTRAINT boards_name_length
-  CHECK (char_length(name) <= 100);
+DO $$ BEGIN
+  ALTER TABLE public.boards
+    ADD CONSTRAINT boards_name_length
+    CHECK (char_length(name) <= 100);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 ```
 
 **영향 분석:**
@@ -1577,8 +1574,7 @@ export function emotionGradientStyle(emotion: string | undefined) {
 - [ ] 앱: `npm test` 통과
 - [ ] 웹: `next build` 성공
 - [ ] 앱/웹 커밋 → push → 배포
-- [ ] **배포 후 1주**: Sentry 월간 쿼터 사용량 확인 (Developer 플랜 5,000건/월)
-- [ ] 에러 로깅 개선으로 쿼터 초과 접근 시 → Team 플랜($26/mo) 업그레이드 또는 Rate Limiting 설정
+- [ ] **배포 후 1주**: Sentry 월간 쿼터 사용량 확인 (2,500건 이하 정상)
 
 #### Release 4 배포 체크리스트
 - [ ] DB 마이그레이션 dry-run 확인
@@ -1591,7 +1587,7 @@ export function emotionGradientStyle(emotion: string | undefined) {
 
 | 누락 | 영향 | 권장 |
 |---|---|---|
-| **에러 모니터링 기준선** | Phase 3/5에서 에러 처리 변경 시 Sentry 그루핑이 바뀜 (Sentry 설정으로 조정 가능) | 배포 후 Sentry 대시보드에서 새 그루핑 확인, 필요 시 Fingerprint Rules 조정 |
+| **에러 모니터링 기준선** | Phase 3/5에서 에러 처리 변경 시 Sentry 그루핑이 바뀜 | 배포 후 대시보드에서 그루핑 확인, 필요 시 Fingerprint Rules 조정 (무료 플랜에서 가능) |
 | **성능 기준선** | Phase 13에서 "5,000건+ 시 최적화"라 했지만, 현재 검색 응답 시간 기록 없음 | `EXPLAIN ANALYZE`로 현재 쿼리 성능 기록 |
 | **웹 SSR 경로별 RLS 영향 분석** | Phase 6a에서 "웹은 service_role_key 사용"이라 했지만, 모든 SSR 경로가 그런지 미확인 | 웹 레포의 Supabase 클라이언트 생성 패턴 전수 조사 |
 | **shared/constants.ts 크기 관리** | Phase 2a에서 ANALYSIS_STATUS, ANALYSIS_CONFIG, VALIDATION을 추가하면 계속 비대해짐 | 도메인별 분리 기준 설정 (예: 200줄 초과 시 `constants/analysis.ts` 등으로 분리) |

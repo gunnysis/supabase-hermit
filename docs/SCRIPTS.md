@@ -185,6 +185,7 @@ HERMIT_WEB_REPO=/other/path/to/web bash scripts/sync-to-projects.sh
 | `types/database.gen.ts` | `src/types/database.gen.ts` | `src/types/database.gen.ts` | diff 비교 후 복사 |
 | `shared/constants.ts` | `src/shared/lib/constants.generated.ts` | `src/lib/constants.generated.ts` | diff 비교 후 복사 |
 | `shared/types.ts` | `src/types/database.types.ts` | `src/types/database.types.ts` | diff 비교 후 복사 |
+| `shared/utils.ts` | `src/shared/lib/utils.generated.ts` | `src/lib/utils.generated.ts` | diff 비교 후 복사 |
 
 **앱 전용**:
 | 소스 (중앙) | 앱 대상 | 설명 |
@@ -309,6 +310,7 @@ npm run push
   │     ├─ database.gen.ts → 앱/웹
   │     ├─ constants.ts → 앱/웹 (constants.generated.ts)
   │     ├─ types.ts → 앱/웹 (database.types.ts)
+  │     ├─ utils.ts → 앱/웹 (utils.generated.ts)
   │     └─ SHARED_PALETTE → 앱 (shared-palette.js)
   │
   └─ 4. verify.sh --quiet  (정합성 자동 검증)

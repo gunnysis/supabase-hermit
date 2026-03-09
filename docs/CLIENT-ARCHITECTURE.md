@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-11 (v5: 감정분석 상태 추적, UX/UI 최적화)
+> 최종 업데이트: 2026-03-16 (v6: shared/utils.ts 추가, 감정분석 보강)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -16,6 +16,7 @@
 |---|---|---|---|
 | `shared/constants.ts` | 감정 상수, 디자인 토큰, 모션 프리셋 | `src/shared/lib/constants.generated.ts` | `src/lib/constants.generated.ts` |
 | `shared/types.ts` | 비즈니스 타입 (Post, Comment 등) | `src/types/database.types.ts` | `src/types/database.types.ts` |
+| `shared/utils.ts` | 순수 유틸 함수 (generateInviteCode 등) | `src/shared/lib/utils.generated.ts` | `src/lib/utils.generated.ts` |
 | `types/database.gen.ts` | Supabase 자동 생성 DB 타입 | `src/types/database.gen.ts` | `src/types/database.gen.ts` |
 
 ### Re-export 패턴

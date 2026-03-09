@@ -1,7 +1,8 @@
 # 유지보수 구현 실행 설계 v3 — Claude 자율 실행 계획서
 
 > 작성: 2026-03-09 | v1 설계 + v2 연구 + 리뷰 반영 → 구현 실행 단계 구체화
-> 실행 주체: **Claude Code — 모든 구현/판단/배포 권한 일임**
+> **2차 리뷰 반영: 2026-03-09 | 7개 설계 개선(I1-I7) 적용 — 조사 5 추가, 멱등성, CSP, 모니터링, MOTION 확인**
+> 실행 주체: **Claude Code — 모든 구현/판단/배포/디버깅 권한 + 결과 책임 일임**
 > 기반: [DESIGN-maintenance-v1.md](DESIGN-maintenance-v1.md), [DESIGN-maintenance-v2.md](DESIGN-maintenance-v2.md), [REVIEW-dev-lead-analysis.md](../memo/REVIEW-dev-lead-analysis.md)
 
 ---
@@ -24,7 +25,7 @@
 | **Supabase** | Pro | $25/mo | pg_cron, PGroonga 활성, 8GB DB |
 | **Vercel** | Hobby (무료) | $0 | 서버리스 100GB-hrs, 10초 타임아웃 |
 | **Sentry** | Developer (무료) | $0 | 5,000 에러/월, 1명, 이메일 알림만 |
-| **EAS Build** | Free tier | $0 | 월 30빌드, 큐 대기 |
+| **EAS Build** | Starter (유료) | $0 (포함) | 월 무제한 빌드, 우선 큐 |
 
 ### 0b. 코드베이스
 
@@ -34,29 +35,21 @@
 | 앱 | `/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm` | Expo 54, 테스트 17파일 83케이스 |
 | 웹 | `/home/gunny/apps/web` | Next.js 16.1.6, Sentry 연동 |
 
-### 0c. 비용 준비 — 구현 착수 전 완료
+### 0c. 비용 — 현재 무료 유지, 조건부 업그레이드
 
-> Release 1 시작 전에 아래 플랜 전환을 모두 완료한다.
-> 구현 중 플랜 제한에 걸려 작업이 중단되는 상황을 원천 차단.
+> 현재 사용자 1명 → Sentry Developer (무료, 5,000건/월) 쿼터 충분. 사전 업그레이드 불필요.
 
-**전환 대상:**
+**현재 총 월 비용: $25/mo** (Supabase Pro만)
 
-| 서비스 | 현재 | 전환 | 월 비용 | 이유 |
-|---|---|---|---|---|
-| **Sentry** | Developer (무료) | **Team** | **$26/mo** | Phase 3/5 에러 로깅 개선 → 5,000건/월 쿼터 부족 가능. Slack 알림 + GitHub 연동 + Discover로 배포 후 모니터링 품질 확보 |
-| Supabase | Pro | 유지 | $25/mo | 이미 충분 |
-| Vercel | Hobby | 유지 | $0 | Phase 4 정적 CSP로 충분. nonce CSP(Backlog) 실행 시 재평가 |
-| EAS Build | Free | 유지 | $0 | 월 30빌드 충분. OTA 배포 우선 |
+**Sentry Team 업그레이드 조건** (필요 시에만):
 
-**전환 후 총 월 비용: $51/mo** (Supabase $25 + Sentry $26)
+| 조건 | 판단 |
+|---|---|
+| 월 에러 2,500건 초과 (쿼터 50%) | Rate Limiting 설정 검토 |
+| 월 에러 5,000건 근접 | Team ($26/mo) 업그레이드 검토 → 보고 |
+| 사용자 증가로 에러 급증 | Team 업그레이드 필수 |
 
-**Sentry Team 전환 시 설정:**
-1. Sentry 대시보드 → Settings → Subscription → Team 플랜 선택
-2. Slack 연동: Settings → Integrations → Slack → 에러 알림 채널 연결
-3. GitHub 연동: Settings → Integrations → GitHub → 레포 연결
-4. Alert Rule: 에러 100건/1시간 초과 시 Slack 알림
-
-**전환 완료 후 구현 착수.**
+> Fingerprint Rules, Merge/Unmerge, Rate Limiting은 무료 플랜에서도 사용 가능.
 
 ---
 
@@ -79,6 +72,22 @@
 **자체 판단**:
 - 모든 SSR이 service_role_key → Phase 6a 바로 진행
 - anon key 경로 발견 → 해당 경로를 service_role_key로 수정 후 진행 (추가 커밋)
+- 수정이 3파일 이상이면 별도 커밋으로 분리, needs.md에 기록
+
+### 조사 5: reactions 직접 조작 코드 확인
+
+**목적**: Phase 6c(reactions/user_reactions 쓰기 RLS 제거) 후 직접 INSERT하는 레거시 코드가 없는지 확인.
+
+**실행**:
+```bash
+# 앱/웹에서 reactions 직접 INSERT/UPDATE/DELETE 검색
+grep -r "from('reactions')" --include="*.ts" --include="*.tsx" | grep -v "select\|test\|\.d\.ts"
+grep -r "from('user_reactions')" --include="*.ts" --include="*.tsx" | grep -v "select\|test\|\.d\.ts"
+```
+
+**자체 판단**:
+- 발견 없음 → Phase 6c 바로 진행
+- 발견 → RPC 호출로 교체 후 RLS 제거
 
 ### 조사 2: npm audit 현황
 
@@ -105,7 +114,7 @@ cd /home/gunny/apps/web && npm audit 2>/dev/null
 
 ## 2. Release 1 — 보안/안정성 (Day 1)
 
-### Step 1-1: 사전 조사 4건 실행 → 결과에 따라 자체 조정
+### Step 1-1: 사전 조사 5건 실행 → 결과에 따라 자체 조정
 
 ### Step 1-2: DB 마이그레이션 작성 + Push (중앙)
 
@@ -161,6 +170,12 @@ npm audit fix
 1. `package.json` — audit fix 결과
 2. `next.config.ts` — `headers()` 함수 추가 (6개 보안 헤더 + CSP)
 3. `sentry.server.config.ts` — PII regex에 `userId` 추가
+
+**CSP `unsafe-eval` 판단**:
+- 먼저 `unsafe-eval` 없이 CSP 작성 → `npx next build && npx next start`
+- 브라우저 콘솔에서 CSP 위반 에러 확인
+- 에러 없으면 `unsafe-eval` 제거 유지 (더 안전)
+- 에러 있으면 `unsafe-eval` 추가
 
 ```bash
 npx next build  # 빌드 확인
@@ -265,13 +280,12 @@ cd /home/gunny/apps/web && npx next build
 
 통과 시 3개 레포 커밋 + push.
 
-**비용 판단 (Release 2 배포 후)**:
-```
-Sentry 쿼터 확인:
-  ≤3,000건/월 → 조치 없음
-  3,001-5,000건/월 → Rate Limiting 설정 자체 적용
-  >5,000건/월 → 보고: "Sentry Team($26/mo, 50K건) 필요. 이점: Slack 알림, GitHub 연동, Discover."
-```
+**배포 후 모니터링** (에러 처리 변경으로 Sentry 그루핑이 바뀔 수 있음):
+- Sentry 대시보드에서 신규 이슈 그룹 확인 (수시간)
+- 기존 이슈와 중복 발생 시 Fingerprint Rules 또는 Merge로 조정
+
+**Sentry 쿼터 확인** (배포 후):
+- 대시보드에서 월간 사용량 확인 → 2,500건 초과 시 §0c 기준에 따라 판단
 
 ---
 
@@ -309,13 +323,20 @@ Sentry 쿼터 확인:
 **파일**: `supabase/migrations/20260318000001_boards_constraints.sql`
 
 ```sql
-ALTER TABLE public.boards
-  ADD CONSTRAINT boards_description_length
-  CHECK (description IS NULL OR char_length(description) <= 500);
+-- 멱등성 확보: 이미 존재하면 무시
+DO $$ BEGIN
+  ALTER TABLE public.boards
+    ADD CONSTRAINT boards_description_length
+    CHECK (description IS NULL OR char_length(description) <= 500);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-ALTER TABLE public.boards
-  ADD CONSTRAINT boards_name_length
-  CHECK (char_length(name) <= 100);
+DO $$ BEGIN
+  ALTER TABLE public.boards
+    ADD CONSTRAINT boards_name_length
+    CHECK (char_length(name) <= 100);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 ```
 
 Push 전 기존 데이터 확인 (현재 1건, 26자 → 안전).
@@ -356,6 +377,9 @@ spring: {
 
 **절대 원칙: 기존 하드코딩 값을 그대로 상수화. 값 변경 금지.**
 
+> 적용 후 앱에서 애니메이션 시각 확인 필수 — 상수 참조 전환이 값을 미묘하게 변경하지 않았는지 검증.
+> Button, PostCard, SortTabs 등 핵심 터치 반응 동선 확인.
+
 ### Step 5-2: Sync + 앱 적용 (6파일)
 
 ```bash
@@ -380,7 +404,7 @@ bash scripts/sync-to-projects.sh
 |---|---|
 | `text-[13px]` (SortTabs) | `text-xs` |
 | `text-[15px]` (ErrorView) | `text-sm` |
-| `text-[17px]` (PostCard, SearchResultCard) | tailwind.config.js에 `md: '17px'` 확장 |
+| `text-[17px]` (PostCard, SearchResultCard) | tailwind.config.js에 `md: '17px'` 확장 (NativeWind 미지원 시 `text-[17px]` 유지) |
 
 ### Step 5-5: prefers-reduced-motion (웹)
 
@@ -456,7 +480,7 @@ cd /home/gunny/apps/web && npx next build
   웹 에러 로깅 10곳 (20분)
   ESLint + verify.sh (20분)
   검증 + 배포 (15분)
-  → Sentry 쿼터 모니터링 (초과 시에만 보고)
+  → Sentry 쿼터 확인 (§0c 기준)
 
 ━━━ Day 3: Release 3 — 문서 ━━━
   SCHEMA.md + CLAUDE.md 갱신 (40분)

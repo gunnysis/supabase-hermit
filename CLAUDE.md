@@ -45,7 +45,7 @@ supabase-hermit/
 │   ├── SCHEMA.md                   # DB 스키마 상세 문서
 │   ├── SCRIPTS.md                  # 스크립트 사용법 상세
 │   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
-│   └── DESIGN-home-ux-optimization.md  # 홈 UX/UI 최적화 설계 문서
+│   └── complete/                       # 구현 완료된 설계 문서 아카이브
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
 └── CLAUDE.md
@@ -211,4 +211,4 @@ npm run verify        # 레포 간 정합성 검증
 - [DB 스키마 상세](docs/SCHEMA.md) — 테이블/뷰/함수/RLS/트리거/제약조건/Edge Functions 전체
 - [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh 상세
 - [클라이언트 아키텍처](docs/CLIENT-ARCHITECTURE.md) — 앱/웹 심리분석 흐름, 공유 코드 관리, Realtime 패턴
-- [홈 UX 최적화 설계](docs/DESIGN-home-ux-optimization.md) — 홈 화면 게시글 영역 확대 설계
+- [구현 완료 아카이브](docs/complete/) — 홈 UX, 검색, 관리자, 감정분석 등 완료된 설계 문서

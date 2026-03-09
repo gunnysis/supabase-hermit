@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-11
-> 마이그레이션 17개 적용 완료
+> 최종 업데이트: 2026-03-16
+> 마이그레이션 22개 적용 완료
 
 ---
 
@@ -304,14 +304,12 @@ WHERE p.deleted_at IS NULL;
 - 반환 컬럼: `total_posts`, `total_comments`, `total_reactions`, `current_streak`
 - 현재 사용자의 글/댓글/받은 리액션 수 + 연속 활동 일수
 
-### `search_posts(p_query TEXT, p_limit INT DEFAULT 20, p_offset INT DEFAULT 0) -> TABLE`
-게시글 검색 (v1, 레거시). 제목+내용 ILIKE 기반.
+### `cleanup_stuck_analyses() -> INT`
+5분 이상 `analyzing` 상태에 머무른 감정분석을 `failed`로 전환.
 
-- 반환 컬럼: `id`, `title`, `content`, `board_id`, `like_count`, `comment_count`, `emotions`, `created_at`, `display_name`, `author_id`, `is_anonymous`, `image_url`, `initial_emotions`, `group_id`
-- 최소 2자 이상 검색어 필요
-- 그룹 게시글 제외 (`group_id IS NULL`)
-- pg_trgm 인덱스 활용 (가능한 경우)
-- **Deprecated**: `search_posts_v2` 사용 권장
+- 반환: 전환된 행 수
+- `error_reason`에 `'stuck_timeout'` 기록
+- SECURITY DEFINER
 
 ### `search_posts_v2(p_query TEXT, p_emotion TEXT, p_sort TEXT, p_limit INT, p_offset INT) -> TABLE`
 게시글 검색 (v2). 풀텍스트 검색 + 관련도 정렬 + 하이라이트 + 서버 사이드 감정 필터.
@@ -365,6 +363,8 @@ WHERE p.deleted_at IS NULL;
 |---|---|---|
 | Everyone can read groups | SELECT | 무조건 허용 |
 | Only app_admin can create groups as owner | INSERT | `auth.uid() IN app_admin` AND `owner_id = auth.uid()` |
+| Only owner can update groups | UPDATE | `auth.uid() = owner_id` |
+| Only owner can delete groups | DELETE | `auth.uid() = owner_id` |
 
 ### group_members
 | 정책 | 동작 | 조건 |
@@ -473,6 +473,7 @@ WHERE p.deleted_at IS NULL;
 | groups | `groups_invite_code_unique` | invite_code UNIQUE |
 | groups | `groups_name_length` | length(name) <= 100 |
 | groups | `groups_description_length` | length(description) <= 1000 |
+| groups | `groups_invite_code_length` | length(invite_code) BETWEEN 4 AND 50 |
 | boards | `boards_visibility_check` | visibility IN ('public', 'private') |
 | boards | `boards_anon_mode_check` | anon_mode IN ('always_anon', 'allow_choice', 'require_name') |
 | group_members | `group_members_role_check` | role IN ('owner', 'member', 'moderator') |
@@ -583,6 +584,11 @@ supabase
 | 15 | `20260311000002_fix_search_posts_columns.sql` | search_posts RPC에 동일 누락 컬럼 추가 (content_preview 제거) |
 | 16 | `20260311000003_analysis_status_retry.sql` | 감정분석 상태 추적: status/retry_count/error_reason 컬럼, pending 자동 생성/analyzing 전환 트리거, 뷰에 analysis_status |
 | 17 | `20260312000001_search_v2.sql` | 검색 v2: 풀텍스트(tsvector) + 관련도 정렬 + 하이라이트 + 서버 사이드 감정 필터, tsvector GIN 인덱스 |
+| 18 | `20260313000001_admin_groups_rls_fix.sql` | groups UPDATE/DELETE RLS + invite_code CHECK(4-50자) |
+| 19 | `20260314000001_drop_search_posts_v1.sql` | search_posts v1 함수 제거 (deprecated) |
+| 20 | `20260315000001_search_v2_ilike_escape.sql` | search_posts_v2 ILIKE 와일드카드 이스케이프 |
+| 21 | `20260315000002_fix_search_v2_column_order.sql` | search_posts_v2 CTE 컬럼 순서 수정 |
+| 22 | `20260316000001_cleanup_stuck_analyses.sql` | 감정분석 stuck 상태 자동 정리 함수 (cleanup_stuck_analyses) |
 
 ---
 
