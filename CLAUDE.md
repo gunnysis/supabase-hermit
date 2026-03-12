@@ -8,13 +8,13 @@
 supabase-hermit/
 ├── supabase/
 │   ├── config.toml                 # Supabase 프로젝트 설정
-│   └── migrations/                 # 모든 마이그레이션 원본 (25개)
+│   └── migrations/                 # 모든 마이그레이션 원본 (26개)
 │       ├── 20260301000001_schema.sql              # 베이스라인: 테이블/함수/뷰/트리거/인덱스
 │       ├── 20260301000002_rls.sql                 # 베이스라인: RLS 정책
 │       ├── 20260301000003_infra.sql               # 베이스라인: 권한(grants) + Storage
 │       ├── 20260302000000_fix_rls_update_policies.sql  # UPDATE 정책 수정
 │       ├── 20260303000001_core_redesign.sql       # 리액션 RPC, 소프트삭제, FK CASCADE, 제약조건
-│       ├── 20260303000002_fix_group_members_recursion.sql  # RLS 자기참조 재귀 수정
+│       ├── 20260303000002_fix_group_members_recursion.sql  # (레거시) RLS 자기참조 재귀 수정
 │       ├── 20260303000003_post_update_reanalysis.sql  # 글 수정 시 감정분석 자동 재실행
 │       ├── 20260304000001_fix_reactions_data.sql      # 리액션 데이터 정합성 수정
 │       ├── 20260306000001_remove_author_column.sql    # author 컬럼 제거
@@ -26,18 +26,19 @@ supabase-hermit/
 │       ├── 20260311000002_fix_search_posts_columns.sql    # search_posts RPC 컬럼 보강
 │       ├── 20260311000003_analysis_status_retry.sql       # 감정분석 상태 추적 + 재시도 (status/retry_count/error_reason)
 │       ├── 20260312000001_search_v2.sql                  # 검색 v2: 풀텍스트 + 관련도 + 하이라이트 + 감정 필터
-│       ├── 20260313000001_admin_groups_rls_fix.sql       # groups UPDATE/DELETE RLS + invite_code CHECK
+│       ├── 20260313000001_admin_groups_rls_fix.sql       # (레거시) groups UPDATE/DELETE RLS + invite_code CHECK
 │       ├── 20260314000001_drop_search_posts_v1.sql       # search_posts v1 제거 (deprecated)
 │       ├── 20260315000001_search_v2_ilike_escape.sql    # search_posts_v2 ILIKE 와일드카드 이스케이프
 │       ├── 20260315000002_fix_search_v2_column_order.sql # search_posts_v2 CTE 컬럼 순서 수정
 │       ├── 20260316000001_cleanup_stuck_analyses.sql     # 감정분석 stuck 상태 자동 정리 함수
 │       ├── 20260317000001_post_analysis_rls.sql         # post_analysis SELECT: 인증된 사용자만
 │       ├── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
-│       └── 20260318000001_boards_constraints.sql        # boards 이름/설명 길이 CHECK 제약조건
+│       ├── 20260318000001_boards_constraints.sql        # boards 이름/설명 길이 CHECK 제약조건
+│       └── 20260319000001_remove_group_board_system.sql # 그룹/게시판 시스템 완전 제거
 ├── shared/
-│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, ANALYSIS_STATUS/CONFIG, VALIDATION 등)
+│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
-│   └── utils.ts                    # 공유 순수 함수 (generateInviteCode, validateGroupInput, validatePostInput, validateCommentInput)
+│   └── utils.ts                    # 공유 순수 함수 (validatePostInput, validateCommentInput)
 ├── types/
 │   └── database.gen.ts             # 자동 생성 DB 타입 (gen-types.sh 산출물)
 ├── scripts/
@@ -61,12 +62,10 @@ supabase-hermit/
 
 ## DB 스키마 요약
 
-### 테이블 (10개)
+### 테이블 (8개)
 | 테이블 | 설명 |
 |---|---|
-| `groups` | 그룹 (invite_only / request_approve / code_join) |
-| `boards` | 게시판 (public/private, 익명모드 설정) |
-| `group_members` | 그룹 멤버십 (PK: group_id + user_id) |
+| `boards` | 게시판 (익명모드 설정) |
 | `posts` | 게시글 (소프트삭제 지원, 자동 감정 분석, initial_emotions) |
 | `comments` | 댓글 (소프트삭제 지원) |
 | `reactions` | 리액션 집계 (post_id + reaction_type 별 count) |
@@ -78,18 +77,16 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (16개)
+### RPC 함수 (14개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
 | `get_post_reactions(post_id)` | 게시글 리액션 + 사용자 상태 조회 |
 | `soft_delete_post(post_id)` | 게시글 소프트삭제 (본인 + 관리자) |
 | `soft_delete_comment(comment_id)` | 댓글 소프트삭제 (본인 + 관리자) |
-| `is_group_member(group_id)` | 그룹 멤버십 확인 (RLS 재귀 방지) |
 | `get_emotion_trend(days)` | 감정 트렌드 집계 (상위 5개, pct 포함) |
 | `get_recommended_posts_by_emotion(post_id, limit)` | 감정 기반 추천 (폴백 + 시간 감쇠) |
 | `get_trending_posts(hours, limit)` | 트렌딩 게시글 (참여도/시간 가중) |
-| `cleanup_orphan_group_members(days)` | 비활성 익명 사용자 정리 |
 | `get_posts_by_emotion(emotion, limit, offset)` | 특정 감정 게시글 필터 |
 | `get_similar_feeling_count(post_id, days)` | 비슷한 마음 사용자 수 |
 | `get_user_emotion_calendar(user_id, start, end)` | 사용자 감정 캘린더 히트맵 |
@@ -177,7 +174,6 @@ npm run verify        # 레포 간 정합성 검증
 - **push 후 sync 자동 실행** — `db.sh push` 성공 시 자동 처리
 - **generated types는 수동 types와 공존** — `database.gen.ts`는 자동 생성, 비즈니스 타입은 별도 관리
 - **Edge Functions는 앱 레포** — `supabase/functions/`는 앱에서 관리/배포
-- **RLS에서 자기참조 금지** — `group_members` 정책에서 `group_members` 직접 SELECT 하면 무한 재귀. `is_group_member()` SECURITY DEFINER 함수 사용
 - **리액션은 RPC만 사용** — `reactions`/`user_reactions` 직접 쓰기 정책 제거됨. `toggle_reaction()` 사용
 - **삭제는 소프트삭제** — `posts`, `comments`의 hard DELETE 정책 제거. `soft_delete_post()`, `soft_delete_comment()` 사용
 - **멱등 마이그레이션** — `IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP POLICY IF EXISTS` 패턴 적용

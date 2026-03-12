@@ -4,28 +4,8 @@
 /** 게시판 익명 모드 */
 export type AnonMode = 'always_anon' | 'allow_choice' | 'require_name'
 
-/** 그룹 참여 방식 */
-export type JoinMode = 'invite_only' | 'request_approve' | 'code_join'
-
-/** 그룹 멤버 역할 */
-export type MemberRole = 'owner' | 'member' | 'moderator'
-
-/** 그룹 멤버 상태 */
-export type MemberStatus = 'pending' | 'approved' | 'rejected' | 'left'
-
 /** 감정 분석 상태 */
 export type AnalysisStatus = 'pending' | 'analyzing' | 'done' | 'failed'
-
-export interface Group {
-  id: number
-  name: string
-  description: string | null
-  owner_id: string
-  join_mode: JoinMode
-  invite_code: string | null
-  created_at: string
-  updated_at: string
-}
 
 export interface Board {
   id: number
@@ -33,21 +13,8 @@ export interface Board {
   description?: string | null
   visibility: 'public' | 'private'
   anon_mode: AnonMode
-  /** 그룹 전용 게시판일 때 설정 */
-  group_id?: number | null
   created_at: string
   updated_at: string
-}
-
-export interface GroupMember {
-  id: number
-  group_id: number
-  user_id: string
-  role: MemberRole
-  status: MemberStatus
-  nickname: string | null
-  joined_at: string
-  left_at: string | null
 }
 
 export interface Post {
@@ -59,8 +26,6 @@ export interface Post {
   updated_at?: string
   deleted_at?: string | null
   board_id?: number | null
-  group_id?: number | null
-  member_id?: number | null
   is_anonymous: boolean
   display_name: string
   comment_count?: number
@@ -97,7 +62,6 @@ export interface Comment {
   updated_at?: string
   deleted_at?: string | null
   board_id?: number | null
-  group_id?: number | null
   is_anonymous: boolean
   display_name: string
 }
@@ -161,19 +125,11 @@ export interface TrendingPost {
 export const REACTION_TYPES = ['like', 'heart', 'laugh', 'sad', 'surprise'] as const
 export type ReactionType = (typeof REACTION_TYPES)[number]
 
-/** 그룹 생성 입력 (앱/웹 공통) */
-export interface CreateGroupInput {
-  name: string            // 1~100자
-  inviteCode?: string     // 4~50자, 선택 (미입력 시 자동 생성)
-  description?: string    // 0~500자
-}
-
 // 요청 타입
 export interface CreatePostRequest {
   title: string
   content: string
   board_id?: number | null
-  group_id?: number | null
   is_anonymous?: boolean
   display_name?: string
   image_url?: string | null
@@ -183,7 +139,6 @@ export interface CreatePostRequest {
 export interface CreateCommentRequest {
   content: string
   board_id?: number | null
-  group_id?: number | null
   is_anonymous?: boolean
   display_name?: string
 }
@@ -243,7 +198,6 @@ export interface SearchResult {
   is_anonymous: boolean
   image_url: string | null
   initial_emotions: string[] | null
-  group_id: number | null
   title_highlight: string
   content_highlight: string
   relevance_score: number

@@ -101,15 +101,8 @@ export const SEARCH_CONFIG = {
 
 /** 관리자 관련 상수 */
 export const ADMIN_CONSTANTS = {
-  INVITE_CODE_MIN_LENGTH: 4,
-  INVITE_CODE_MAX_LENGTH: 50,
-  GROUP_NAME_MAX_LENGTH: 100,
-  GROUP_DESC_MAX_LENGTH: 500,
-} as const
-
-/** 삭제 확인 메시지 (앱/웹 통일) */
-export const CONFIRM_MESSAGES = {
-  deleteGroup: '그룹의 모든 게시글과 댓글이 함께 삭제됩니다.',
+  BOARD_NAME_MAX_LENGTH: 100,
+  BOARD_DESC_MAX_LENGTH: 500,
 } as const
 
 /** 감정 분석 상태값 */
