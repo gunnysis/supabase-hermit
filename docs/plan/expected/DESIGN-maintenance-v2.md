@@ -811,6 +811,7 @@ const theme = storage.getString('user.theme');
 ## 9. Phase H: Realtime + Supabase 클라이언트 점검 (리팩토링 가이드)
 
 > 추가: 2026-03-12 | ANR의 유력 원인으로 지목. **즉시 확인 가능한 Quick Win**.
+> **점검 완료: 2026-03-13** — 9a: 앱 설정 확인(웹은 브라우저 기본값 정상), 9b: 앱 4개+웹 4개 Realtime hook 모두 removeChannel cleanup 확인.
 
 ### 9a. detectSessionInUrl: false 확인 (v1 L20)
 
