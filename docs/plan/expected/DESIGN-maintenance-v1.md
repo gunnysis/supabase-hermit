@@ -60,6 +60,13 @@
 - [ ] ~~Phase 15e (PostCard memo)~~ — **제외: 14건 게시글에서 성능 차이 없음**
 - [ ] 앱 접근성 보강 (Phase 14d/14e) — 여유 시 진행
 
+### Backlog — 감정분석 업그레이드 (구현 가이드 메모 기반)
+> 출처: [감정분석 구현 가이드](../memo/은둔마을%20감정분석%20구현%20완벽%20가이드%20Gemini%20+%20Supabase%20+%20React%20Native.md)
+> 상세 설계: [DESIGN-emotion-upgrade.md](../DESIGN-emotion-upgrade.md)
+- [ ] 프롬프트 한국어 전환 + 은어 사전 + Structured Output (Phase E1) — R5 완료 후 즉시
+- [ ] post_analysis 확장 (emotion_scores, risk_level) + emotion_alerts 테이블 (Phase E2) — E1 후
+- [ ] 2-Tier 모델 (flash-lite + flash 위기 재분석) + 위기 자원 UI (Phase E3) — E2 후
+
 ### Backlog — 성능/아키텍처 (리팩토링 가이드 기반)
 > 출처: [리팩토링 실전 가이드](../memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md)
 - [ ] Realtime cleanup + detectSessionInUrl 점검 (Phase 16b/16c) — **즉시 확인 가능, ANR 유력 원인**

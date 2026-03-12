@@ -178,7 +178,32 @@ v3 전체 구현 완료 점검해. v1 진행 현황 체크박스 업데이트하
 
 ---
 
-## 5. R1~R5 이후 — 성능/아키텍처 Backlog
+## 5. R1~R5 이후 — 감정분석 업그레이드 Backlog
+
+> [감정분석 구현 가이드](memo/은둔마을%20감정분석%20구현%20완벽%20가이드%20Gemini%20+%20Supabase%20+%20React%20Native.md) 분석 기반 추가 (2026-03-12)
+> 상세 설계: [DESIGN-emotion-upgrade.md](DESIGN-emotion-upgrade.md)
+
+| 우선순위 | 항목 | 트리거 | Phase |
+|---|---|---|---|
+| **높음** | 프롬프트 한국어 전환 + 은어 사전 + Structured Output | R5 완료 후 즉시 | E1 |
+| **높음** | post_analysis 확장 (emotion_scores, risk_level) + emotion_alerts 테이블 | E1 품질 검증 후 | E2 |
+| 중간 | 2-Tier 모델 (flash-lite 기본 + flash 위기 재분석) + 위기 자원 UI | E2 완료 후 | E3 |
+
+**지시 예시:**
+```
+@docs/plan/DESIGN-emotion-upgrade.md Phase E1 실행해
+```
+
+**핵심 변경점:**
+- 프롬프트: 영어 최소 → 한국어 전문 (은둔형 외톨이 특화, 초성/은어 해석 규칙)
+- 위기 감지: 없음 → 4단계 (normal/elevated/high/critical) + 자동 알림
+- 모델: flash → flash-lite(6배 저렴) + 위기 시 flash 재분석
+- 출력: 자유 형식 → JSON Schema 강제 (파싱 에러 제거)
+- 카테고리: 기존 13개 유지 + 8개 상위 카테고리 점수 병행
+
+---
+
+## 6. R1~R5 이후 — 성능/아키텍처 Backlog
 
 > [리팩토링 실전 가이드](memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md) 분석 기반 추가 (2026-03-12)
 
@@ -197,12 +222,14 @@ v2 Phase H 실행해 — Realtime cleanup + detectSessionInUrl 점검
 
 ---
 
-## 6. 관련 문서
+## 7. 관련 문서
 
 | 문서 | 용도 |
 |---|---|
 | [v3 실행 계획서](expected/DESIGN-maintenance-v3-execution.md) | Claude가 따르는 구현 계획 |
 | [v1 상세 설계](expected/DESIGN-maintenance-v1.md) | 각 Phase 상세 설계 |
 | [v2 장기 과제](expected/DESIGN-maintenance-v2.md) | Backlog 상세 (Phase A-J) |
+| [감정분석 업그레이드 설계](DESIGN-emotion-upgrade.md) | E1-E3 상세 설계 (프롬프트, 위기 감지, 2-tier 모델) |
 | [리뷰 분석](memo/REVIEW-dev-lead-analysis.md) | 설계 품질 리뷰 + 개선안 |
 | [리팩토링 실전 가이드](memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md) | Sentry 에러 분석 기반 성능/아키텍처 가이드 |
+| [감정분석 구현 가이드 (메모)](memo/은둔마을%20감정분석%20구현%20완벽%20가이드%20Gemini%20+%20Supabase%20+%20React%20Native.md) | Gemini + Supabase 감정분석 연구 원본 |

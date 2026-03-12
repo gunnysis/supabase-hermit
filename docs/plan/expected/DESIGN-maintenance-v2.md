@@ -1071,7 +1071,16 @@ Phase H  Realtime + Supabase 클라이언트  ← **즉시 확인 가능** (1분
 Phase I  querySupabase 래퍼             ← v1 R2 완료 후 (unhandled rejection 해소)
     ↓
 Phase J  Feature-based 아키텍처 전환     ← 대규모 리팩토링 (v1 R5 완료 후)
+
+━━━ 감정분석 업그레이드 (감정분석 구현 가이드 메모 기반) ━━━
+Phase E1 프롬프트 한국어 전환 + Structured Output  ← v1 R5 완료 후 즉시 (DB 변경 없음)
+    ↓
+Phase E2 위기 감지 (risk_level + emotion_alerts)   ← E1 품질 검증 후 (마이그레이션 필요)
+    ↓
+Phase E3 2-Tier 모델 + 위기 자원 UI               ← E2 완료 후 (사용자 체감 변화)
 ```
+
+> Phase E1-E3 상세 설계: [DESIGN-emotion-upgrade.md](DESIGN-emotion-upgrade.md)
 
 **리뷰 반영 변경:**
 - Phase A: v1 Release 1에 통합 (JS breaking change 없음, jest-expo CRITICAL 해결)
@@ -1108,3 +1117,8 @@ Phase J  Feature-based 아키텍처 전환     ← 대규모 리팩토링 (v1 R5
 | v1 L19-L20: Realtime/detectSessionInUrl | Phase H | **즉시 확인 — ANR 유력 원인** |
 | v1 L23: querySupabase 래퍼 | Phase I | v1 R2 완료 후, unhandled rejection 지속 시 |
 | v1 L22: Feature-based 구조 | Phase J | v1 R5 완료 후 여유 시 (대규모) |
+| 감정분석 프롬프트 + 구조화 출력 | Phase E1 | v1 R5 완료 후 즉시 |
+| 위기 감지 + emotion_alerts | Phase E2 | E1 품질 검증 후 |
+| 2-Tier 모델 + 위기 자원 UI | Phase E3 | E2 완료 후 |
+
+> Phase E1-E3 상세: [DESIGN-emotion-upgrade.md](DESIGN-emotion-upgrade.md)
