@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-16
-> 마이그레이션 22개 적용 완료
+> 최종 업데이트: 2026-03-17
+> 마이그레이션 24개 적용 완료
 
 ---
 
@@ -381,14 +381,14 @@ WHERE p.deleted_at IS NULL;
 ### post_analysis
 | 정책 | 동작 | 조건 |
 |---|---|---|
-| post_analysis_select | SELECT | 무조건 허용 |
+| post_analysis_select | SELECT | `auth.role() = 'authenticated'` |
 
 ### user_reactions
 | 정책 | 동작 | 조건 |
 |---|---|---|
 | user_reactions_select | SELECT | 무조건 허용 |
-| user_reactions_insert | INSERT | `auth.uid() = user_id` |
-| user_reactions_delete | DELETE | `auth.uid() = user_id` |
+
+> INSERT/DELETE 정책 제거됨 — `toggle_reaction()` 사용
 
 ### user_preferences
 | 정책 | 동작 | 조건 |

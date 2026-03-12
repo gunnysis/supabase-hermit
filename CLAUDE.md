@@ -30,7 +30,9 @@ supabase-hermit/
 │       ├── 20260314000001_drop_search_posts_v1.sql       # search_posts v1 제거 (deprecated)
 │       ├── 20260315000001_search_v2_ilike_escape.sql    # search_posts_v2 ILIKE 와일드카드 이스케이프
 │       ├── 20260315000002_fix_search_v2_column_order.sql # search_posts_v2 CTE 컬럼 순서 수정
-│       └── 20260316000001_cleanup_stuck_analyses.sql     # 감정분석 stuck 상태 자동 정리 함수
+│       ├── 20260316000001_cleanup_stuck_analyses.sql     # 감정분석 stuck 상태 자동 정리 함수
+│       ├── 20260317000001_post_analysis_rls.sql         # post_analysis SELECT: 인증된 사용자만
+│       └── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_HIGHLIGHT, SEARCH_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -204,7 +206,7 @@ npm run verify        # 레포 간 정합성 검증
 
 - Project ref: `qwrjebpsjjdxhhhllqcw`
 - 앱 레포: `/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm`
-- 웹 레포: `/home/gunny/apps/web`
+- 웹 레포: `/home/gunny/apps/web-hermit-comm`
 
 ## 상세 문서
 
