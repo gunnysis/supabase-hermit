@@ -23,7 +23,7 @@ set -euo pipefail
 
 CENTRAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_REPO="${HERMIT_APP_REPO:-/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm}"
-WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web}"
+WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web-hermit-comm}"
 
 SYNC_APP=true
 SYNC_WEB=true

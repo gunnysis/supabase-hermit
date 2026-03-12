@@ -205,7 +205,7 @@ HERMIT_WEB_REPO=/other/path/to/web bash scripts/sync-to-projects.sh
 | 레포 | 기본 경로 | 환경변수 |
 |---|---|---|
 | 앱 | `/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm` | `HERMIT_APP_REPO` |
-| 웹 | `/home/gunny/apps/web` | `HERMIT_WEB_REPO` |
+| 웹 | `/home/gunny/apps/web-hermit-comm` | `HERMIT_WEB_REPO` |
 
 ### 경고 사항
 
@@ -252,7 +252,7 @@ bash scripts/verify.sh --web        # 웹만 검증
   = constants.generated.ts
   = database.types.ts
 
---- [웹] /home/gunny/apps/web ---
+--- [웹] /home/gunny/apps/web-hermit-comm ---
   [migrations]
     = 파일 수 일치 (8)
   = config.toml

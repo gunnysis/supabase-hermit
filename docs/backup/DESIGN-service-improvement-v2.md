@@ -852,7 +852,7 @@ useEffect(() => {
 ## 파일 변경 맵
 
 ```
-[웹] /home/gunny/apps/web
+[웹] /home/gunny/apps/web-hermit-comm
   src/lib/sanitize.ts              — isomorphic-dompurify → dompurify + 서버 폴백
   package.json                     — 의존성 교체
 

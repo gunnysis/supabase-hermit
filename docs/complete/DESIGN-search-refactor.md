@@ -649,9 +649,9 @@ WHERE refobjid = 'public.search_posts(text,integer,integer)'::regprocedure;
 ```bash
 # 3. 앱/웹 코드에서 v1 호출 확인 (Phase 0 사전 검증)
 grep -rn "search_posts[^_v]" /mnt/c/Users/Administrator/programming/apps/gns-hermit-comm/src/
-grep -rn "search_posts[^_v]" /home/gunny/apps/web/src/
+grep -rn "search_posts[^_v]" /home/gunny/apps/web-hermit-comm/src/
 grep -rn "\.rpc.*search_posts['\"]" /mnt/c/Users/Administrator/programming/apps/gns-hermit-comm/src/
-grep -rn "\.rpc.*search_posts['\"]" /home/gunny/apps/web/src/
+grep -rn "\.rpc.*search_posts['\"]" /home/gunny/apps/web-hermit-comm/src/
 ```
 
 위 4개 쿼리 모두 결과가 0건이면 안전하게 DROP 가능.

@@ -700,7 +700,7 @@ if (error) {
 #### 즉시 조치: 배포
 
 ```bash
-cd /home/gunny/apps/web
+cd /home/gunny/apps/web-hermit-comm
 git push origin main  # Vercel auto-deploy → isomorphic-dompurify 제거됨
 ```
 

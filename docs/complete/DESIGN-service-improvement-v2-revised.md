@@ -1114,7 +1114,7 @@ useEffect(() => {
 ## 파일 변경 맵 (확정)
 
 ```
-[웹] /home/gunny/apps/web
+[웹] /home/gunny/apps/web-hermit-comm
   src/lib/sanitize.ts                      — [삭제] isomorphic-dompurify 제거, PostContent로 대체
   src/features/posts/components/PostContent.tsx  — [신규] 클라이언트 전용 sanitize 컴포넌트
   src/features/posts/components/PostDetailView.tsx  — PostContent 사용으로 교체 (L279)
