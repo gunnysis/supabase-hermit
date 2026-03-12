@@ -50,9 +50,15 @@ export const EMOTION_COLOR_MAP: Record<string, {
 /** 모션 프리셋 (앱/웹 공유) */
 export const MOTION = {
   spring: {
-    gentle: { tension: 120, friction: 14 },
-    bouncy: { tension: 200, friction: 8 },
-    quick:  { tension: 300, friction: 20 },
+    gentle:  { tension: 120, friction: 14 },
+    bouncy:  { tension: 200, friction: 8 },
+    quick:   { tension: 300, friction: 20 },
+    button:  { tension: 300, friction: 8 },
+    release: { tension: 200, friction: 4 },
+    fab:     { tension: 120, friction: 5 },
+    card:    { tension: 200, friction: 8 },
+    cardAlt: { tension: 150, friction: 4 },
+    tab:     { tension: 180, friction: 7 },
   },
   timing: { fast: 150, medium: 250, slow: 400 },
   easing: {
