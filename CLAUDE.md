@@ -34,9 +34,9 @@ supabase-hermit/
 │       ├── 20260317000001_post_analysis_rls.sql         # post_analysis SELECT: 인증된 사용자만
 │       └── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
 ├── shared/
-│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_HIGHLIGHT, SEARCH_CONFIG 등)
+│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, ANALYSIS_STATUS/CONFIG, VALIDATION 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
-│   └── utils.ts                    # 공유 순수 함수 (generateInviteCode, validateGroupInput)
+│   └── utils.ts                    # 공유 순수 함수 (generateInviteCode, validateGroupInput, validatePostInput, validateCommentInput)
 ├── types/
 │   └── database.gen.ts             # 자동 생성 DB 타입 (gen-types.sh 산출물)
 ├── scripts/
