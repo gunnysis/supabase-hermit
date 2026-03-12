@@ -106,6 +106,35 @@ export const CONFIRM_MESSAGES = {
   deleteGroup: '그룹의 모든 게시글과 댓글이 함께 삭제됩니다.',
 } as const
 
+/** 감정 분석 상태값 */
+export const ANALYSIS_STATUS = {
+  PENDING: 'pending',
+  ANALYZING: 'analyzing',
+  DONE: 'done',
+  FAILED: 'failed',
+} as const
+
+/** 감정 분석 설정 */
+export const ANALYSIS_CONFIG = {
+  MAX_POLLING_MS: 2 * 60 * 1000,
+  POLLING_INTERVAL_MS: 5_000,
+  MAX_FALLBACK_RETRIES: 2,
+  FALLBACK_DELAYS: [10_000, 20_000] as readonly number[],
+  MAX_RETRY_COUNT: 3,
+  STALE_TIME_MS: 5 * 60 * 1000,
+  INNER_REFETCH_DELAY_MS: 3_000,
+  COOLDOWN_SECONDS: 60,
+} as const
+
+/** 입력 길이 제한 */
+export const VALIDATION = {
+  POST_TITLE_MAX: 100,
+  POST_CONTENT_MAX: 5_000,
+  POST_CONTENT_MIN: 1,
+  COMMENT_MAX: 1_000,
+  COMMENT_MIN: 1,
+} as const
+
 /** 공유 색상 팔레트 (HEX) — 각 플랫폼에서 자체 방식으로 사용 */
 export const SHARED_PALETTE = {
   happy:    { 50: '#FFF9E6', 100: '#FFF3CC', 200: '#FFE799', 300: '#FFDB66', 400: '#FFCF33', 500: '#FFC300', 600: '#CC9C00', 700: '#997500', 800: '#664E00', 900: '#332700' },

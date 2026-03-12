@@ -16,7 +16,7 @@ set -euo pipefail
 
 CENTRAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_REPO="${HERMIT_APP_REPO:-/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm}"
-WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web}"
+WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web-hermit-comm}"
 
 CHECK_APP=true
 CHECK_WEB=true
@@ -161,6 +161,24 @@ verify_repo() {
   compare_files "database.types.ts" \
     "$CENTRAL/shared/types.ts" \
     "$types_target"
+
+  # utils.generated.ts
+  local utils_target
+  if [ "$name" = "앱" ]; then
+    utils_target="$repo/src/shared/lib/utils.generated.ts"
+  else
+    utils_target="$repo/src/lib/utils.generated.ts"
+  fi
+  compare_files "utils.generated.ts" \
+    "$CENTRAL/shared/utils.ts" \
+    "$utils_target"
+
+  # shared-palette.js (앱만, 소스와 대상 모두 존재할 때만)
+  if [ "$name" = "앱" ] && [ -f "$CENTRAL/shared/palette.cjs" ] && [ -f "$repo/shared-palette.js" ]; then
+    compare_files "shared-palette.js" \
+      "$CENTRAL/shared/palette.cjs" \
+      "$repo/shared-palette.js"
+  fi
 
   log ""
 }
