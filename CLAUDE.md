@@ -52,8 +52,10 @@ supabase-hermit/
 │   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
 │   ├── plan/                       # 진행 예정/진행 중 설계 문서
 │   │   ├── expected/               # 유지보수 계획 (v1, v2, v3 실행계획서)
-│   │   └── DESIGN-emotion-upgrade.md  # 감정분석 업그레이드 E1-E3 설계
-│   ├── complete/                   # 구현 완료 설계 문서 아카이브 (9개)
+│   │   ├── memo/                   # 연구/분석 메모 (리팩토링 가이드, 감정분석 가이드)
+│   │   ├── DESIGN-emotion-upgrade.md  # 감정분석 업그레이드 E1-E3 설계
+│   │   └── IMPLEMENTATION-GUIDE.md    # 구현 가이드 (Phase별 실행 참고)
+│   ├── complete/                   # 구현 완료 설계 문서 아카이브
 │   └── backup/                     # 대체된 설계 문서 보관
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
@@ -101,7 +103,7 @@ supabase-hermit/
 | `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, 60초 쿨다운, 서버 재시도 2회) |
 | `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback + 재시도, 쿨다운 우회, 서버 재시도 2회) |
 
-> **Phase E1 (2026-03-13)**: 한국어 전문 프롬프트 + Gemini Structured Output 적용. emotions 외에 risk_level/risk_indicators/context_notes를 로그 기록 (DB 저장은 Phase E2 예정). 설계: `docs/plan/DESIGN-emotion-upgrade.md`
+> **Phase E1 (2026-03-13, 배포 완료)**: 한국어 전문 프롬프트 + Gemini Structured Output 적용. emotions 외에 risk_level/risk_indicators/context_notes를 로그 기록 (DB 저장은 Phase E2 예정). 설계: `docs/plan/DESIGN-emotion-upgrade.md`
 
 ## 워크플로
 
