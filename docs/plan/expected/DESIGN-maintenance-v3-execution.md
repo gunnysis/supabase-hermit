@@ -33,7 +33,7 @@
 |---|---|---|
 | 중앙 | `/home/gunny/apps/supabase-hermit` | 마이그레이션 22개, shared 3파일 (constants 117줄, utils 31줄, types 290줄) |
 | 앱 | `/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm` | Expo 54, 테스트 17파일 83케이스 |
-| 웹 | `/home/gunny/apps/web` | Next.js 16.1.6, Sentry 연동 |
+| 웹 | `/home/gunny/apps/web-hermit-comm` | Next.js 16.1.6, Sentry 연동 |
 
 ### 0c. 비용 — 현재 무료 유지, 조건부 업그레이드
 
@@ -93,7 +93,7 @@ grep -r "from('user_reactions')" --include="*.ts" --include="*.tsx" | grep -v "s
 
 ```bash
 cd /mnt/c/Users/Administrator/programming/apps/gns-hermit-comm && npm audit 2>/dev/null
-cd /home/gunny/apps/web && npm audit 2>/dev/null
+cd /home/gunny/apps/web-hermit-comm && npm audit 2>/dev/null
 ```
 
 **자체 판단**: `npm audit fix`로 해결 안 되는 건 → overrides 또는 수동 업그레이드 적용.
@@ -162,7 +162,7 @@ npm audit --omit=dev  # 프로덕션 취약점 0건 확인
 ### Step 1-4: 웹 — npm audit + 보안 헤더 + Sentry PII
 
 ```bash
-cd /home/gunny/apps/web
+cd /home/gunny/apps/web-hermit-comm
 npm audit fix
 ```
 
@@ -275,7 +275,7 @@ if (error) {
 ```bash
 bash scripts/verify.sh
 cd /mnt/c/Users/Administrator/programming/apps/gns-hermit-comm && npm run test
-cd /home/gunny/apps/web && npx next build
+cd /home/gunny/apps/web-hermit-comm && npx next build
 ```
 
 통과 시 3개 레포 커밋 + push.
@@ -350,7 +350,7 @@ Push 전 기존 데이터 확인 (현재 1건, 26자 → 안전).
 
 ```bash
 bash scripts/db.sh push
-cd /home/gunny/apps/web && npx next build
+cd /home/gunny/apps/web-hermit-comm && npx next build
 ```
 
 **비용**: $0
@@ -427,7 +427,7 @@ bash scripts/sync-to-projects.sh
 
 ```bash
 cd /mnt/c/Users/Administrator/programming/apps/gns-hermit-comm && npm run test
-cd /home/gunny/apps/web && npx next build
+cd /home/gunny/apps/web-hermit-comm && npx next build
 ```
 
 앱/웹 독립 배포 가능.
@@ -445,6 +445,11 @@ cd /home/gunny/apps/web && npx next build
 | **PGroonga** (v2 Phase E) | 검색 품질 피드백 3건+ | $0 |
 | **nonce CSP** (v2 Phase C) | 보안 감사 요구 또는 SRI 안정화 | **보고 필요**: Vercel Pro $20/mo |
 | **디자인 토큰 문서** (v2 Phase F) | 팀 2인+ 확장 | $0 |
+| **Realtime/detectSessionInUrl 점검** (v2 Phase H) | **즉시 확인 가능** — ANR 유력 원인 | $0 |
+| **FlashList + expo-image** (v2 Phase G) | ANR 재발 또는 게시글 100건+ | $0 |
+| **MMKV 전환** (v2 Phase G) | 스토리지 성능 이슈, 또는 다음 네이티브 빌드 시 | $0 |
+| **querySupabase 래퍼** (v2 Phase I) | R2 완료 후, unhandled rejection 지속 시 | $0 |
+| **Feature-based 구조 전환** (v2 Phase J) | R5 완료 후 여유 시 (대규모) | $0 |
 
 ### 테스트 확장 상세 (위험 기반 2주)
 

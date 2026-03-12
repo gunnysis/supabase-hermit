@@ -178,11 +178,31 @@ v3 전체 구현 완료 점검해. v1 진행 현황 체크박스 업데이트하
 
 ---
 
-## 5. 관련 문서
+## 5. R1~R5 이후 — 성능/아키텍처 Backlog
+
+> [리팩토링 실전 가이드](memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md) 분석 기반 추가 (2026-03-12)
+
+| 우선순위 | 항목 | 트리거 | v2 Phase |
+|---|---|---|---|
+| **즉시** | detectSessionInUrl + Realtime cleanup 점검 | ANR 유력 원인, 1분 확인 | Phase H |
+| 높음 | querySupabase 래퍼 도입 | R2 후, unhandled rejection 지속 시 | Phase I |
+| 중간 | FlatList → FlashList + expo-image | ANR 재발, 게시글 100건+ | Phase G |
+| 중간 | AsyncStorage → MMKV | 다음 네이티브 빌드 시 | Phase G |
+| 낮음 | Feature-based 아키텍처 전환 | R5 완료 후, 앱 구조 혼란 시 | Phase J |
+
+**지시 예시:**
+```
+v2 Phase H 실행해 — Realtime cleanup + detectSessionInUrl 점검
+```
+
+---
+
+## 6. 관련 문서
 
 | 문서 | 용도 |
 |---|---|
 | [v3 실행 계획서](expected/DESIGN-maintenance-v3-execution.md) | Claude가 따르는 구현 계획 |
 | [v1 상세 설계](expected/DESIGN-maintenance-v1.md) | 각 Phase 상세 설계 |
-| [v2 장기 과제](expected/DESIGN-maintenance-v2.md) | Backlog 상세 |
+| [v2 장기 과제](expected/DESIGN-maintenance-v2.md) | Backlog 상세 (Phase A-J) |
 | [리뷰 분석](memo/REVIEW-dev-lead-analysis.md) | 설계 품질 리뷰 + 개선안 |
+| [리팩토링 실전 가이드](memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md) | Sentry 에러 분석 기반 성능/아키텍처 가이드 |

@@ -9,6 +9,7 @@
 > **리뷰 반영: 2026-03-09 | 개발 책임자 리뷰 기반 재구성 ([REVIEW-dev-lead-analysis.md](../memo/REVIEW-dev-lead-analysis.md))**
 > **2차 리뷰 반영: 2026-03-09 | 구현 판단 개선 — 멱등성, CSP unsafe-eval, reactions 사전확인, Sentry Alert, 모니터링, MOTION 시각확인, NativeWind 호환**
 > **구현 계획: 2026-03-09 | 실행 설계서 → [DESIGN-maintenance-v3-execution.md](DESIGN-maintenance-v3-execution.md)**
+> **리팩토링 가이드 반영: 2026-03-12 | L18-L23 + 성능/아키텍처 Backlog 추가 ([리팩토링 가이드](../memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md))**
 
 ---
 
@@ -58,6 +59,15 @@
 - [ ] ~~Phase 15c (gradient CSS 변수)~~ — **제외: 현재 작동하는 코드의 대규모 리팩토링, ROI 낮음**
 - [ ] ~~Phase 15e (PostCard memo)~~ — **제외: 14건 게시글에서 성능 차이 없음**
 - [ ] 앱 접근성 보강 (Phase 14d/14e) — 여유 시 진행
+
+### Backlog — 성능/아키텍처 (리팩토링 가이드 기반)
+> 출처: [리팩토링 실전 가이드](../memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md)
+- [ ] Realtime cleanup + detectSessionInUrl 점검 (Phase 16b/16c) — **즉시 확인 가능, ANR 유력 원인**
+- [ ] querySupabase 래퍼 도입 + React Query 에러 체인 정리 (Phase 16e) — unhandled rejection 해소
+- [ ] FlatList → FlashList 마이그레이션 (Phase 16a) — ANR 감소, 피드 화면부터
+- [ ] expo-image 적용 (Phase 16a, L13 격상) — `recyclingKey` + blurhash + 캐싱
+- [ ] AsyncStorage → MMKV (Phase 16d) — `expo prebuild` + dev client 필요 (EAS Build 사용 중이므로 가능)
+- [ ] Feature-based 구조 전환 (Phase 17) — `app/` 라우트만, `features/` 비즈니스 로직, `lib/` 인프라 (v2 Phase G 참조)
 
 ---
 
@@ -137,11 +147,19 @@
 | L10 | 앱 접근성 | 리액션 버튼 `accessibilityHint` 미설정 — 토글 동작 미안내 | `ReactionBar.tsx:43` | Phase 14d |
 | L11 | 앱 디자인 | EmptyState 인라인 버튼 — `<Button>` 컴포넌트 미사용 | `EmptyState.tsx:33` | Phase 14e |
 | L12 | 앱 디자인 | PostDetailHeader 터치 타겟 40x40pt — 최소 44pt 미달 | `PostDetailHeader.tsx:48` | Phase 14d |
-| L13 | 앱 디자인 | `expo-image` 미사용 — package.json에 설치되었으나 Image 사용 | `PostCard.tsx:88-92` | Phase 14e |
+| L13 | 앱 성능 | `expo-image` 미사용 — package.json에 설치되었으나 Image 사용. FlashList `recyclingKey` 연동 필요 | `PostCard.tsx:88-92` | ~~Phase 14e~~ → **Phase 16a 격상** (ANR 해소 연계) |
 | L14 | 웹 디자인 | PostCard `memo` 미적용 — 피드 리스트 성능 저하 가능 | `PostCard.tsx` | Phase 15e |
 | L15 | 웹 접근성 | RichEditor 툴바 `aria-label`/`aria-pressed` 미설정 | `RichEditor.tsx:44` | Phase 15b |
 | L16 | 웹 디자인 | z-index 스케일 미문서화 — Header/BottomNav/Dialog 모두 z-50 | 다수 컴포넌트 | Phase 15e |
 | L17 | 웹 접근성 | view-transition.ts에 `prefers-reduced-motion` 체크 누락 | `view-transition.ts` | Phase 15a |
+| L18 | 앱 성능 | FlatList 사용 — ANR(Application Not Responding) 원인. FlashList로 교체 시 CPU 32%↓, 프레임 타임 29%↓ | 피드 화면 전체 | Phase 16a |
+| L19 | 앱 성능 | Realtime 구독 cleanup 미확인 — `supabase.removeChannel()` 누락 시 메모리 누수 → ANR | Realtime 사용 hooks | Phase 16b |
+| L20 | 앱 설정 | `detectSessionInUrl: false` 미확인 — 누락 시 Realtime delete만 수신 버그 (supabase#26980) | `supabase.ts` 클라이언트 설정 | Phase 16c |
+| L21 | 앱 성능 | AsyncStorage → MMKV 전환 — ~30배 빠른 동기 API. 설정/캐시/preferences 저장 최적화 | 앱 Storage 레이어 | Phase 16d |
+| L22 | 앱 아키텍처 | feature-based 구조 부재 — 웹은 `src/features/` 사용 중, 앱은 미적용. 코드 공유/일관성 저하 | 앱 전체 구조 | Phase 17 |
+| L23 | 앱 에러 | querySupabase 래퍼 패턴 부재 — Supabase 호출마다 에러 처리 반복, unhandled rejection 원인 | 앱 API 레이어 전체 | Phase 16e |
+
+> **L18-L23 출처**: [리팩토링 실전 가이드](../memo/hermit-comm(은둔마을)%20대규모%20리팩토링%20실전%20가이드.md) — Sentry 에러 로그 + 웹 아키텍처 분석 기반
 
 ---
 
@@ -232,7 +250,7 @@ npm start             # Metro 번들러 확인
 
 **해결 방안:**
 ```bash
-cd /home/gunny/apps/web
+cd /home/gunny/apps/web-hermit-comm
 npm audit fix
 # hono, serialize-javascript 등 transitive dependency 자동 해결
 ```
@@ -847,7 +865,7 @@ describe('trending API', () => {
 # 현재 (lines 24-26)
 CENTRAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_REPO="${HERMIT_APP_REPO:-/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm}"
-WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web}"
+WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web-hermit-comm}"
 ```
 - 환경변수 오버라이드 이미 존재 (`HERMIT_APP_REPO`, `HERMIT_WEB_REPO`)
 - 하드코딩 기본값이 WSL 전용 (`/mnt/c/`)
@@ -856,7 +874,7 @@ WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web}"
 ```bash
 # 현재 (lines 18-19) — 동일 패턴
 APP_REPO="${HERMIT_APP_REPO:-/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm}"
-WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web}"
+WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web-hermit-comm}"
 ```
 
 **verify.sh 검증 누락:**
@@ -869,7 +887,7 @@ WEB_REPO="${HERMIT_WEB_REPO:-/home/gunny/apps/web}"
 ```bash
 # .env.local (git 제외, 개발자별 설정)
 HERMIT_APP_REPO=/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm
-HERMIT_WEB_REPO=/home/gunny/apps/web
+HERMIT_WEB_REPO=/home/gunny/apps/web-hermit-comm
 ```
 
 ```bash
@@ -1270,13 +1288,11 @@ className="w-10 h-10 ..."
 className="w-11 h-11 ..."
 ```
 
-#### 14e. 기타 개선 (L11, L13)
+#### 14e. 기타 개선 (L11)
 
 **EmptyState 버튼 (L11)**: 인라인 `Pressable` → `<Button variant="primary" size="sm">` 사용.
 
-**expo-image 마이그레이션 (L13)**: `package.json`에 `expo-image` 설치됨 (`line 49`)이나 미사용.
-PostCard의 `<Image>` → `<Image>` (from `expo-image`) 전환 시 자동 캐싱/최적화 확보.
-> ⚠️ expo-image API 호환성 확인 필요 (resizeMode → contentFit 등).
+> ~~expo-image (L13)~~: **Phase 16a(ANR 해소)로 격상** — FlashList `recyclingKey` 연동, blurhash 플레이스홀더, `cachePolicy="memory-disk"` 등 성능 최적화와 함께 진행. v2 Phase G 참조.
 
 ---
 
@@ -1596,7 +1612,7 @@ export function emotionGradientStyle(emotion: string | undefined) {
 
 ---
 
-## 6. 범위 외 (향후 과제)
+## 7. 범위 외 (향후 과제)
 
 | 항목 | 상세 | 트리거 | 예상 노력 | 상태 |
 |---|---|---|---|---|
@@ -1614,7 +1630,7 @@ export function emotionGradientStyle(emotion: string | undefined) {
 
 ---
 
-## 7. 사용자 확인 항목 (확인 완료)
+## 8. 사용자 확인 항목 (확인 완료)
 
 | # | 항목 | 결과 | 영향 |
 |---|---|---|---|
