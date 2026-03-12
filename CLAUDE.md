@@ -8,7 +8,7 @@
 supabase-hermit/
 ├── supabase/
 │   ├── config.toml                 # Supabase 프로젝트 설정
-│   └── migrations/                 # 모든 마이그레이션 원본
+│   └── migrations/                 # 모든 마이그레이션 원본 (24개)
 │       ├── 20260301000001_schema.sql              # 베이스라인: 테이블/함수/뷰/트리거/인덱스
 │       ├── 20260301000002_rls.sql                 # 베이스라인: RLS 정책
 │       ├── 20260301000003_infra.sql               # 베이스라인: 권한(grants) + Storage
@@ -42,12 +42,17 @@ supabase-hermit/
 ├── scripts/
 │   ├── db.sh                       # Supabase CLI 래퍼 (push/pull/diff/lint/status/gen-types)
 │   ├── gen-types.sh                # DB 스키마 -> TypeScript 타입 생성
-│   └── sync-to-projects.sh        # 앱/웹 레포로 migrations + config + types 동기화
+│   ├── sync-to-projects.sh        # 앱/웹 레포로 migrations + config + types 동기화
+│   └── verify.sh                   # 3개 레포 간 파일 정합성 검증
 ├── docs/
 │   ├── SCHEMA.md                   # DB 스키마 상세 문서
 │   ├── SCRIPTS.md                  # 스크립트 사용법 상세
 │   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
-│   └── complete/                       # 구현 완료된 설계 문서 아카이브
+│   ├── plan/                       # 진행 예정/진행 중 설계 문서
+│   │   ├── expected/               # 유지보수 계획 (v1, v2, v3 실행계획서)
+│   │   └── DESIGN-emotion-upgrade.md  # 감정분석 업그레이드 E1-E3 설계
+│   ├── complete/                   # 구현 완료 설계 문서 아카이브 (9개)
+│   └── backup/                     # 대체된 설계 문서 보관
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
 └── CLAUDE.md
@@ -176,6 +181,8 @@ npm run verify        # 레포 간 정합성 검증
 - **삭제는 소프트삭제** — `posts`, `comments`의 hard DELETE 정책 제거. `soft_delete_post()`, `soft_delete_comment()` 사용
 - **멱등 마이그레이션** — `IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP POLICY IF EXISTS` 패턴 적용
 - **공유 상수/타입/유틸은 `shared/`에서만 수정** — `shared/constants.ts`, `shared/types.ts`, `shared/utils.ts`는 sync로 앱/웹에 배포. 앱/웹의 generated 파일 직접 수정 금지. `utils.ts`에는 외부 import 없는 순수 함수만 추가할 것
+- **Expo SDK 업그레이드 시 `npx expo install --fix` 필수** — `npm install expo@~XX.0.0`만으로는 companion 패키지가 업데이트되지 않아 EAS Build 실패 위험. 반드시 `npx expo install --fix` → `npx expo install --check` → `npx expo-doctor` 순서 실행
+- **앱 빌드 전 `bash scripts/pre-build-check.sh`** — SDK 호환성, TypeScript, expo-doctor, 중앙 sync, 테스트 5단계 검증. EAS Build 트리거 전 로컬에서 실행
 
 ## Claude 역할
 
@@ -208,9 +215,21 @@ npm run verify        # 레포 간 정합성 검증
 - 앱 레포: `/mnt/c/Users/Administrator/programming/apps/gns-hermit-comm`
 - 웹 레포: `/home/gunny/apps/web-hermit-comm`
 
+## 앱/웹 기술 스택
+
+| 구분 | 앱 | 웹 |
+|---|---|---|
+| 프레임워크 | React Native (Expo SDK 55) | Next.js |
+| 빌드 | EAS Build (GitHub App 자동 트리거) | Vercel |
+| 모니터링 | @sentry/react-native ~7.11.0 | @sentry/nextjs |
+| 스타일링 | NativeWind (Tailwind) | Tailwind CSS |
+| 상태관리 | TanStack Query | TanStack Query |
+
 ## 상세 문서
 
 - [DB 스키마 상세](docs/SCHEMA.md) — 테이블/뷰/함수/RLS/트리거/제약조건/Edge Functions 전체
-- [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh 상세
+- [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh, verify.sh 상세
 - [클라이언트 아키텍처](docs/CLIENT-ARCHITECTURE.md) — 앱/웹 심리분석 흐름, 공유 코드 관리, Realtime 패턴
-- [구현 완료 아카이브](docs/complete/) — 홈 UX, 검색, 관리자, 감정분석 등 완료된 설계 문서
+- [유지보수 실행 계획](docs/plan/expected/) — v3 릴리스 계획 (R1-R5)
+- [감정분석 업그레이드 설계](docs/plan/DESIGN-emotion-upgrade.md) — E1-E3 단계별 업그레이드
+- [구현 완료 아카이브](docs/complete/) — 홈 UX, 검색, 관리자, 감정분석, EAS 빌드 방지 등 완료된 설계 문서
