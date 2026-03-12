@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-16 (v6: shared/utils.ts 추가, 감정분석 보강)
+> 최종 업데이트: 2026-03-13 (v7: Phase E1 반영, 그룹 시스템 제거 반영, re-export 목록 갱신)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -16,7 +16,7 @@
 |---|---|---|---|
 | `shared/constants.ts` | 감정 상수, 디자인 토큰, 모션 프리셋 | `src/shared/lib/constants.generated.ts` | `src/lib/constants.generated.ts` |
 | `shared/types.ts` | 비즈니스 타입 (Post, Comment 등) | `src/types/database.types.ts` | `src/types/database.types.ts` |
-| `shared/utils.ts` | 순수 유틸 함수 (generateInviteCode 등) | `src/shared/lib/utils.generated.ts` | `src/lib/utils.generated.ts` |
+| `shared/utils.ts` | 순수 유틸 함수 (validatePostInput, validateCommentInput) | `src/shared/lib/utils.generated.ts` | `src/lib/utils.generated.ts` |
 | `types/database.gen.ts` | Supabase 자동 생성 DB 타입 | `src/types/database.gen.ts` | `src/types/database.gen.ts` |
 
 ### Re-export 패턴
@@ -26,16 +26,19 @@
 ```
 앱: src/shared/lib/constants.ts
   → export { ALLOWED_EMOTIONS, EMOTION_EMOJI, REACTION_COLOR_MAP, SHARED_PALETTE,
-             EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES } from './constants.generated'
+             EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES,
+             SEARCH_HIGHLIGHT, SEARCH_CONFIG, ADMIN_CONSTANTS,
+             ANALYSIS_STATUS, ANALYSIS_CONFIG, VALIDATION } from './constants.generated'
   → export type { AllowedEmotion, ReactionColorKey } from './constants.generated'
-  → + 앱 전용 상수 (VALIDATION, ALIAS_ADJECTIVES, PAGE_SIZE 등)
+  → + 앱 전용 상수 (ALIAS_ADJECTIVES, ALIAS_ANIMALS, PAGE_SIZE 등)
 
 앱: src/types/index.ts
   → export * from './database.types'
 
 웹: src/lib/constants.ts
   → export { ALLOWED_EMOTIONS, EMOTION_EMOJI, REACTION_COLOR_MAP, SHARED_PALETTE,
-             EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES } from './constants.generated'
+             EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES,
+             SEARCH_HIGHLIGHT, SEARCH_CONFIG, ADMIN_CONSTANTS } from './constants.generated'
   → + 웹 전용 상수 (VALIDATION, ADJECTIVES, ANIMALS, PAGE_SIZE 등)
 
 웹: src/types/database.ts
@@ -98,15 +101,16 @@ bash scripts/sync-to-projects.sh
 
 ### 클라이언트 분석 대기 전략
 
-**앱 (status 기반 폴링)**:
+**앱 (status 기반 폴링 + 단계적 fallback)**:
 
 | 단계 | 조건 | 동작 |
 |---|---|---|
 | 1 | 즉시 | `post_analysis` 초기 조회 (status, retry_count 포함) |
-| 2 | status=pending/analyzing | 3초 간격 refetchInterval 자동 폴링 |
-| 3 | 15초 후 status≠done | `analyze-post-on-demand` Edge Function 호출 |
-| 4 | status=failed & retry_count<3 | 재시도 버튼 표시 |
-| 5 | status=failed & retry_count≥3 | 최종 실패 메시지 표시 |
+| 2 | status=pending/analyzing | 5초 간격 refetchInterval 자동 폴링 (최대 2분) |
+| 3 | 10초 후 status≠done | 1차 `analyze-post-on-demand` Edge Function 호출 |
+| 4 | 20초 후 status≠done | 2차 `analyze-post-on-demand` 호출 (최대 2회) |
+| 5 | status=failed & retry_count<3 | 재시도 버튼 표시 |
+| 6 | status=failed & retry_count≥3 | 최종 실패 메시지 표시 |
 
 **웹 (Realtime + 타이머)**:
 
@@ -121,10 +125,11 @@ bash scripts/sync-to-projects.sh
 
 ```
 마운트
-  ├─ useQuery: postAnalysis 조회 (status, retry_count, error_reason 포함)
-  ├─ refetchInterval: status=pending/analyzing → 3초, 그 외 → 비활성
-  └─ useEffect: 15초 타이머
-       └─ status 확인 → pending/analyzing이면 invokeSmartService → invalidate
+  ├─ useQuery: postAnalysis 조회 (ANALYSIS_CONFIG.STALE_TIME_MS)
+  ├─ refetchInterval: status=pending/analyzing → 5초 폴링 (MAX_POLLING_MS=2분)
+  ├─ useEffect: Realtime 구독 (post_analysis INSERT/UPDATE → invalidate)
+  └─ useEffect: 단계적 fallback (FALLBACK_DELAYS: [10초, 20초])
+       └─ 캐시 확인 → 미완료면 invokeSmartService → 3초 후 invalidate
 ```
 
 ### 웹 구현 (`usePostAnalysis`)
@@ -224,9 +229,21 @@ EmotionTags (clickable) → Link href="/search?emotion=..."
 | 함수 | 상태 | JWT | 용도 |
 |---|---|---|---|
 | `analyze-post` | 활성 | X | DB Trigger 자동 (INSERT + UPDATE) |
-| `analyze-post-on-demand` | 활성 | O | 15초 fallback + 수동 재시도 (쿨다운 우회) |
+| `analyze-post-on-demand` | 활성 | O | fallback + 수동 재시도 (쿨다운 우회) |
 | ~~`smart-service`~~ | 삭제 | - | analyze-post-on-demand로 대체 |
 | ~~`recommend-posts-by-emotion`~~ | 삭제 | - | RPC 직접 호출로 대체 |
+
+### 감정분석 프롬프트 (Phase E1)
+
+**`_shared/analyze.ts`**: 한국어 전문 감정분석가 시스템 프롬프트 + Gemini Structured Output.
+
+| 항목 | 내용 |
+|---|---|
+| 모델 | `gemini-2.5-flash` (환경변수 `GEMINI_MODEL`로 변경 가능) |
+| 출력 형식 | Structured Output (`responseMimeType: 'application/json'` + `responseSchema`) |
+| 응답 스키마 | `emotions` (string[], 최대 3개) + `risk_level` (normal/elevated/high/critical) + `risk_indicators` (string[]) + `context_notes` (string) |
+| 프롬프트 특화 | 은둔형 외톨이 맥락, 한국어 은어/초성 해석 (ㅋ, ㅠㅠ, 멘붕, 읽씹 등), 위기 신호 감지, 작은 성취 인식 |
+| DB 저장 | Phase E1: `emotions` 배열만 저장, risk 정보는 로그로만 기록 (Phase E2에서 DB 컬럼 추가 예정) |
 
 ---
 

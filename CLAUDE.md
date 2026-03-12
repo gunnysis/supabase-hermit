@@ -101,6 +101,8 @@ supabase-hermit/
 | `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, 60초 쿨다운, 서버 재시도 2회) |
 | `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback + 재시도, 쿨다운 우회, 서버 재시도 2회) |
 
+> **Phase E1 (2026-03-13)**: 한국어 전문 프롬프트 + Gemini Structured Output 적용. emotions 외에 risk_level/risk_indicators/context_notes를 로그 기록 (DB 저장은 Phase E2 예정). 설계: `docs/plan/DESIGN-emotion-upgrade.md`
+
 ## 워크플로
 
 ### 1. 새 마이그레이션 작성
