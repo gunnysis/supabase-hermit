@@ -4,6 +4,7 @@
 > 갱신: 2026-03-08 | 선행 설계 문서 병합 완료
 > 최종 점검: 2026-03-13 | 완료 항목 반영, 상호 참조 정합성 확인
 > 작업 예정: 2026-03-13 | v1 설계 문서 구현 작업
+> **v3 실행 완료: 2026-03-12 | Release 1-5 구현 완료 (R5-2만 스킵), 체크박스 갱신**
 > 설계 보강: 2026-03-08 | 프론트엔드 코드 조사 완료 — Phase 2/3/5/7/12 실제 라인 매핑 추가
 > 디자인 설계: 2026-03-08 | 앱/웹 UI 전수 조사 — Phase 14 (앱 디자인) + Phase 15 (웹 디자인/접근성) 추가
 > **리뷰 반영: 2026-03-09 | 개발 책임자 리뷰 기반 재구성 ([REVIEW-dev-lead-analysis.md](../memo/REVIEW-dev-lead-analysis.md))**
@@ -17,41 +18,41 @@
 
 > Release 단위 체크리스트 — 전체 문서를 매번 읽지 않아도 현재 진행률 파악 가능
 
-### Release 1: 보안/안정성 (Day 1)
-- [ ] R1-1: npm audit fix + Expo 55 업그레이드 — 앱 (Phase 1a)
-- [ ] R1-2: npm audit fix — 웹 (Phase 1b)
-- [ ] R1-3: post_analysis RLS 강화 (Phase 6a)
-- [ ] R1-4: reactions 쓰기 RLS 제거 (Phase 6c)
-- [ ] R1-5: 웹 보안 헤더 + CSP (Phase 4)
-- [ ] R1-6: Sentry PII 필터 (Phase 5b)
-- [ ] 배포 + 24시간 모니터링
+### Release 1: 보안/안정성 (Day 1) ✅ 완료
+- [x] R1-1: npm audit fix + Expo 55 업그레이드 — 앱 (Phase 1a)
+- [x] R1-2: npm audit fix — 웹 (Phase 1b)
+- [x] R1-3: post_analysis RLS 강화 (Phase 6a)
+- [x] R1-4: reactions 쓰기 RLS 제거 (Phase 6c)
+- [x] R1-5: 웹 보안 헤더 + CSP (Phase 4)
+- [x] R1-6: Sentry PII 필터 (Phase 5b)
+- [x] 배포 + 24시간 모니터링
 
-### Release 2: 코드 품질 (Day 2-3)
-- [ ] R2-1: 중앙 shared 상수/유틸 보강 (Phase 2a/2b)
-- [ ] R2-2: 앱 API 에러 처리 통일 (Phase 3)
-- [ ] R2-3: 웹 API 에러 로깅 (Phase 5a)
-- [ ] R2-4: ESLint 수정 (Phase 7a)
-- [ ] R2-5: verify.sh 보강 (Phase 11c) ← **격상: 사실상 유일한 통합 테스트**
-- [ ] R2-6: Edge Function 검증 스크립트 (Phase 7b)
-- [ ] sync + 테스트 + 배포
+### Release 2: 코드 품질 (Day 2-3) ✅ 완료
+- [x] R2-1: 중앙 shared 상수/유틸 보강 (Phase 2a/2b)
+- [x] R2-2: 앱 API 에러 처리 통일 (Phase 3)
+- [x] R2-3: 웹 API 에러 로깅 (Phase 5a)
+- [x] R2-4: ESLint 수정 (Phase 7a)
+- [x] R2-5: verify.sh 보강 (Phase 11c) ← **격상: 사실상 유일한 통합 테스트**
+- [x] R2-6: Edge Function 검증 스크립트 (Phase 7b) — verify.sh에 통합 (독립 스크립트 대신)
+- [x] sync + 테스트 + 배포
 
-### Release 3: 문서/스크립트 (Day 3)
-- [ ] R3-1: SCHEMA.md 갱신 (Phase 8)
-- [ ] 중앙 레포만 커밋
+### Release 3: 문서/스크립트 (Day 3) ✅ 완료
+- [x] R3-1: SCHEMA.md 갱신 (Phase 8)
+- [x] 중앙 레포만 커밋
 
-### Release 4: DB 제약조건 + 타입 (Day 4)
-- [ ] R4-1: boards CHECK 제약조건 (Phase 12a)
-- [ ] R4-2: view-transition.ts 타입 (Phase 12b)
-- [ ] DB 마이그레이션 + 웹 커밋
+### Release 4: DB 제약조건 + 타입 (Day 4) ✅ 완료
+- [x] R4-1: boards CHECK 제약조건 (Phase 12a)
+- [x] R4-2: view-transition.ts 타입 (Phase 12b)
+- [x] DB 마이그레이션 + 웹 커밋
 
-### Release 5: 디자인/접근성 (Week 2)
-- [ ] R5-1: 앱 MOTION 상수화 — **값 변경 없이** (Phase 14a 수정)
-- [ ] R5-2: 앱 아이콘/그림자 색상 중앙화 (Phase 14b)
-- [ ] R5-3: 앱 임의 폰트 크기 표준화 (Phase 14c)
-- [ ] R5-4: 웹 prefers-reduced-motion (Phase 15a)
-- [ ] R5-5: 웹 접근성 button 전환 (Phase 15b)
-- [ ] R5-6: 웹 scrollbar CSS (Phase 15d)
-- [ ] 앱/웹 각 커밋 (독립 배포 가능)
+### Release 5: 디자인/접근성 (Week 2) ✅ 완료 (R5-2 제외)
+- [x] R5-1: 앱 MOTION 상수화 — **값 변경 없이** (Phase 14a 수정)
+- [ ] ~~R5-2: 앱 아이콘/그림자 색상 중앙화 (Phase 14b)~~ — **스킵: variant별 고유 색상이라 중앙화 ROI 낮음**
+- [x] R5-3: 앱 임의 폰트 크기 표준화 (Phase 14c)
+- [x] R5-4: 웹 prefers-reduced-motion (Phase 15a)
+- [x] R5-5: 웹 접근성 button 전환 (Phase 15b)
+- [x] R5-6: 웹 scrollbar CSS (Phase 15d)
+- [x] 앱/웹 각 커밋 (독립 배포 가능)
 
 ### Backlog (조건부)
 - [ ] 앱 테스트 확장: 위험 기반 Tier 0-1만 우선 (Phase 10 + v2 Phase B 통합)
