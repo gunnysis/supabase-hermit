@@ -8,7 +8,7 @@
 supabase-hermit/
 ├── supabase/
 │   ├── config.toml                 # Supabase 프로젝트 설정
-│   └── migrations/                 # 모든 마이그레이션 원본 (24개)
+│   └── migrations/                 # 모든 마이그레이션 원본 (25개)
 │       ├── 20260301000001_schema.sql              # 베이스라인: 테이블/함수/뷰/트리거/인덱스
 │       ├── 20260301000002_rls.sql                 # 베이스라인: RLS 정책
 │       ├── 20260301000003_infra.sql               # 베이스라인: 권한(grants) + Storage
@@ -32,7 +32,8 @@ supabase-hermit/
 │       ├── 20260315000002_fix_search_v2_column_order.sql # search_posts_v2 CTE 컬럼 순서 수정
 │       ├── 20260316000001_cleanup_stuck_analyses.sql     # 감정분석 stuck 상태 자동 정리 함수
 │       ├── 20260317000001_post_analysis_rls.sql         # post_analysis SELECT: 인증된 사용자만
-│       └── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
+│       ├── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
+│       └── 20260318000001_boards_constraints.sql        # boards 이름/설명 길이 CHECK 제약조건
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, ANALYSIS_STATUS/CONFIG, VALIDATION 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)

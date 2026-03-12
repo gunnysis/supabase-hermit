@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-17
-> 마이그레이션 24개 적용 완료
+> 최종 업데이트: 2026-03-18
+> 마이그레이션 25개 적용 완료
 
 ---
 
@@ -476,6 +476,8 @@ WHERE p.deleted_at IS NULL;
 | groups | `groups_invite_code_length` | length(invite_code) BETWEEN 4 AND 50 |
 | boards | `boards_visibility_check` | visibility IN ('public', 'private') |
 | boards | `boards_anon_mode_check` | anon_mode IN ('always_anon', 'allow_choice', 'require_name') |
+| boards | `boards_name_length` | char_length(name) <= 100 |
+| boards | `boards_description_length` | description IS NULL OR char_length(description) <= 500 |
 | group_members | `group_members_role_check` | role IN ('owner', 'member', 'moderator') |
 | group_members | `group_members_status_check` | status IN ('pending', 'approved', 'rejected', 'left') |
 | posts | `posts_title_length` | length(title) <= 200 |
@@ -589,6 +591,9 @@ supabase
 | 20 | `20260315000001_search_v2_ilike_escape.sql` | search_posts_v2 ILIKE 와일드카드 이스케이프 |
 | 21 | `20260315000002_fix_search_v2_column_order.sql` | search_posts_v2 CTE 컬럼 순서 수정 |
 | 22 | `20260316000001_cleanup_stuck_analyses.sql` | 감정분석 stuck 상태 자동 정리 함수 (cleanup_stuck_analyses) |
+| 23 | `20260317000001_post_analysis_rls.sql` | post_analysis SELECT: `auth.role() = 'authenticated'`로 강화 (anon 접근 차단) |
+| 24 | `20260317000002_reactions_rls_cleanup.sql` | reactions/user_reactions 직접 쓰기 RLS 5개 정책 제거 (toggle_reaction RPC 전용) |
+| 25 | `20260318000001_boards_constraints.sql` | boards 이름/설명 길이 CHECK 제약조건 (name ≤ 100, description ≤ 500) |
 
 ---
 
