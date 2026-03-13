@@ -1,346 +1,327 @@
-# 검색 기능 동기화 설계 — 앱 → 웹/중앙
+# 검색 페이지 디자인/UX/레이아웃 앱/웹 동기화 개선 설계
 
-> 작성일: 2026-03-06
-> 상태: 구현 완료
+> 작성: 2026-03-13 | 상태: 구현 완료
+
+## 1. 현황 분석
+
+### 1.1 구조 비교
+
+| 항목 | 앱 (React Native) | 웹 (Next.js) | 차이점 |
+|------|-------------------|-------------|--------|
+| 메인 파일 | `src/app/search.tsx` (443줄) | `SearchView.tsx` (415줄) | 비슷한 규모, 독립 구현 |
+| 컴포넌트 분리 | SearchResultCard, SearchResultList, EmotionPostList 별도 | SearchView 단일 파일 내 인라인 | **앱이 더 분리됨** |
+| 감정 칩 개수 | 7개 (일부만 표시) | 13개 (ALLOWED_EMOTIONS 전체) | **불일치** |
+| 스크롤 방식 | FlashList + onEndReached (threshold 0.3) | IntersectionObserver (threshold 0.1) | 플랫폼 차이 (정상) |
+| URL 상태 | 없음 (인메모리) | searchParams 동기화 | **웹만 URL 영속** |
+| 최근 검색 저장 | draftStorage (AsyncStorage) | localStorage | 플랫폼 차이 (정상) |
+| 하이라이트 | HighlightText (Text 컴포넌트) | HighlightText (mark 태그) | 플랫폼 차이 (정상) |
+| 감정필터 해제 UI | 감정 칩 재클릭 | "필터 해제" 버튼 + 칩 재클릭 | **웹에만 명시적 해제 버튼** |
+| 초기 화면 감정 탐색 | 2열 wrap 그리드 | flex wrap 그리드 | 비슷 |
+
+### 1.2 공유 인프라 현황
+
+**중앙에서 공유 (constants.ts + types.ts):**
+- `SEARCH_HIGHLIGHT` — 하이라이트 색상 (light/dark)
+- `SEARCH_CONFIG` — debounce 400ms, page 20, recent max 8, stale 30s, min query 2
+- `SearchResult` 인터페이스 — 17개 필드
+- `SearchSort` 타입 — relevance | recent | popular
+- `ALLOWED_EMOTIONS` — 13개 감정
+- `EMOTION_EMOJI` — 감정별 이모지
+- `EMOTION_COLOR_MAP` — 감정별 gradient + family + category
+- `EMPTY_STATE_MESSAGES.search` — 빈 상태 메시지
+
+**각 클라이언트 독립 구현:**
+- 검색 UI 레이아웃 전체
+- SearchResultCard 렌더링
+- 최근 검색 관리 (recent-searches.ts)
+- 감정 칩 스타일링
+- 정렬 UI
+- 로딩/에러/빈 상태 UI
+
+### 1.3 핵심 불일치 목록
+
+| # | 불일치 | 심각도 | 설명 |
+|---|--------|--------|------|
+| D1 | 감정 칩 개수 | 🔴 높음 | 앱 7개 vs 웹 13개 — 같은 서비스인데 탐색 가능한 감정이 다름 |
+| D2 | 초기 화면 "감정으로 찾기" 레이아웃 | 🟡 중간 | 앱은 2열 고정 grid, 웹은 flex wrap — 시각적 차이 |
+| D3 | 정렬 버튼 스타일 | 🟡 중간 | 앱: happy-600 bg / 웹: primary bg — 색상 계열 다름 |
+| D4 | SearchResultCard 구조 | 🟡 중간 | 정보 배치, 줄 수 제한, 메타데이터 순서 미세 차이 |
+| D5 | 감정 필터 해제 방법 | 🟢 낮음 | 웹에만 명시적 "필터 해제" 버튼 존재 |
+| D6 | 빈 상태 메시지 | 🟢 낮음 | 앱은 자체 메시지, 웹은 EMPTY_STATE_MESSAGES.search 혼용 |
+| D7 | 감정 칩 active 스타일 | 🟡 중간 | 앱: gradient bg + border / 웹: solid bg + border — 미세 차이 |
 
 ---
 
-## 1. 현재 상태 비교
+## 2. 개선 목표
 
-### 앱 (search.tsx) — 이미 개선 완료
-| 기능 | 상태 |
-|---|---|
-| 초기 화면: 최근 검색어 (개별/전체 삭제) | O |
-| 초기 화면: 감정으로 찾기 그리드 | O |
-| 검색 입력: 아이콘 + 클리어 버튼 + 뒤로가기 | O |
-| 감정 칩 가로 스크롤 (EMOTION_COLOR_MAP 색상) | O |
-| 텍스트 + 감정 동시 필터 | O (클라이언트 사이드) |
-| 필터 상태 바 (검색어 + 감정 + 결과 건수) | O |
-| 빈 상태: 감정/검색 조합별 맞춤 메시지 | O |
-| 디바운스 | 300ms |
-| API | `search_posts` v1 (ILIKE) |
-| 페이지네이션 | 50건 일괄 로드 |
+### 2.1 원칙
 
-### 웹 (SearchView.tsx) — 개선 필요
-| 기능 | 상태 |
-|---|---|
-| 검색 입력: 아이콘만 | O (클리어 버튼 없음) |
-| 감정 필터: URL 파라미터 연동 Badge | O (단일 Badge만) |
-| 감정 칩 가로 스크롤 | X |
-| 초기 화면: 최근 검색어 | X |
-| 초기 화면: 감정으로 찾기 그리드 | X |
-| 필터 상태 바 | X (결과 건수만) |
-| 빈 상태 | 기본적 |
-| 디바운스 | 500ms |
-| API | `search_posts` v1 (ILIKE) |
-| 페이지네이션 | 20건 일괄 로드 |
+1. **시각적 동일성보다 경험적 일관성** — 플랫폼 네이티브 패턴 존중하되, 사용자가 "같은 서비스"로 인식해야 함
+2. **중앙 상수 확장** — 정렬 옵션, 빈 상태, 감정 칩 순서 등 반복 정의를 공유 상수로 통합
+3. **최소 변경** — 동작하는 코드를 깨지 않고 불일치만 해소
+
+### 2.2 비목표
+
+- 앱/웹 검색 컴포넌트 코드 공유 (플랫폼 차이로 비현실적)
+- 검색 RPC 변경 (현재 search_posts_v2 충분)
+- 새 DB 마이그레이션
 
 ---
 
-## 2. 동기화 범위
+## 3. 개선 항목
 
-### 2.1 Phase A: 앱 v2 전환 (앱 레포)
+### S1. 감정 칩 개수 통일 (D1 해결)
 
-앱의 검색 API를 `search_posts` → `search_posts_v2`로 전환.
+**현황:** 앱은 감정 7개만 하드코딩, 웹은 `ALLOWED_EMOTIONS` 13개 전체 사용.
 
-#### 파일: `src/shared/lib/api/posts.ts`
+**해결:** 앱도 `ALLOWED_EMOTIONS` 전체 13개 사용하도록 수정. 가로 스크롤 영역이므로 13개도 충분히 수용 가능.
+
+**변경:**
+- 앱 `search.tsx`: 하드코딩된 감정 배열 → `ALLOWED_EMOTIONS` import 사용
+
+### S2. 중앙 검색 상수 확장
+
+**현재 SEARCH_CONFIG에 없는 반복 정의:**
 
 ```typescript
-// 기존 searchPosts → v2로 교체
-import type { SearchResult, SearchSort } from '@/types';
+// 두 클라이언트에서 동일하게 정의하는 것들
+const SORT_OPTIONS = [
+  { value: 'relevance', label: '관련도순' },
+  { value: 'recent', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+]
 
-export async function searchPosts(params: {
-  query: string;
-  emotion?: string | null;
-  sort?: SearchSort;
-  limit?: number;
-  offset?: number;
-}): Promise<SearchResult[]> {
-  const { query, emotion, sort = 'relevance', limit = 20, offset = 0 } = params;
-  const q = query.trim();
-  if (q.length < 2) return [];
-
-  const { data, error } = await supabase.rpc('search_posts_v2', {
-    p_query: q,
-    p_emotion: emotion ?? null,
-    p_sort: sort,
-    p_limit: limit,
-    p_offset: offset,
-  });
-
-  if (error) {
-    logger.error('[API] searchPosts 에러:', error.message);
-    throw new APIError(500, error.message);
-  }
-
-  return (data ?? []) as SearchResult[];
-}
+const EMOTION_ONLY_LIMIT = 50  // 앱, 웹: getPostsByEmotion limit
 ```
 
-#### 파일: `src/app/search.tsx` 변경사항
-
-1. **API 호출 변경**: `api.searchPosts(trimmed, 50, 0)` → `api.searchPosts({ query: trimmed, emotion: selectedEmotion || null, sort, limit: 20, offset })`
-2. **서버 사이드 감정 필터**: 클라이언트 `posts.filter(...)` 제거 → `p_emotion` 파라미터로 서버 위임
-3. **정렬 토글 UI 추가**: `관련도순` | `최신순` | `인기순`
-4. **하이라이트 렌더링**: `title_highlight` / `content_highlight`에서 `<<>>` 파싱 → `<Text style={highlight}>`
-5. **무한 스크롤**: `useInfiniteQuery` + FlashList `onEndReached`
-6. **감정 전용 검색도 v2 사용**: `getPostsByEmotion` 대신 `searchPosts({ query: '', emotion })` — 단, v2는 query 2자 필수이므로 감정 전용은 기존 `getPostsByEmotion` RPC 유지
-
-#### 하이라이트 컴포넌트: `src/shared/components/HighlightText.tsx`
-
-```tsx
-import { Text, type TextStyle } from 'react-native';
-
-interface HighlightTextProps {
-  text: string;
-  highlightStyle?: TextStyle;
-  style?: TextStyle;
-  numberOfLines?: number;
-}
-
-/** <<...>> 구분자로 감싼 텍스트를 하이라이트 렌더링 */
-export function HighlightText({ text, highlightStyle, style, numberOfLines }: HighlightTextProps) {
-  const parts = parseHighlight(text);
-
-  return (
-    <Text style={style} numberOfLines={numberOfLines}>
-      {parts.map((part, i) =>
-        part.highlighted ? (
-          <Text key={i} style={[{ fontWeight: '700', backgroundColor: '#FFF3CC' }, highlightStyle]}>
-            {part.text}
-          </Text>
-        ) : (
-          <Text key={i}>{part.text}</Text>
-        ),
-      )}
-    </Text>
-  );
-}
-
-function parseHighlight(text: string): { text: string; highlighted: boolean }[] {
-  const parts: { text: string; highlighted: boolean }[] = [];
-  const regex = /<<(.*?)>>/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ text: text.slice(lastIndex, match.index), highlighted: false });
-    }
-    parts.push({ text: match[1], highlighted: true });
-    lastIndex = regex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({ text: text.slice(lastIndex), highlighted: false });
-  }
-
-  return parts.length > 0 ? parts : [{ text, highlighted: false }];
-}
-```
-
----
-
-### 2.2 Phase B: 웹 v2 전환 + UX 동기화 (웹 레포)
-
-앱의 검색 UX를 웹에 이식하면서 동시에 v2 API로 전환.
-
-#### 파일: `src/features/posts/api/postsApi.ts`
+**추가할 중앙 상수:**
 
 ```typescript
-// searchPosts → v2 교체
-import type { SearchResult, SearchSort } from '@/types/database';
+// shared/constants.ts에 추가
+export const SEARCH_SORT_OPTIONS = [
+  { value: 'relevance', label: '관련도순' },
+  { value: 'recent', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+] as const
 
-export async function searchPosts(params: {
-  query: string;
-  emotion?: string | null;
-  sort?: SearchSort;
-  limit?: number;
-  offset?: number;
-}): Promise<SearchResult[]> {
-  const { query, emotion, sort = 'relevance', limit = 20, offset = 0 } = params;
-  const supabase = createClient();
-  const q = query.trim();
-  if (q.length < 2) return [];
-
-  const { data, error } = await supabase.rpc('search_posts_v2', {
-    p_query: q,
-    p_emotion: emotion ?? null,
-    p_sort: sort,
-    p_limit: limit,
-    p_offset: offset,
-  });
-  if (error) throw error;
-  return (data ?? []) as SearchResult[];
-}
+export const SEARCH_CONFIG = {
+  ...기존,
+  EMOTION_ONLY_LIMIT: 50,      // 감정 전용 모드 페이지 크기
+  RESULT_TITLE_LINES: 2,        // 결과 카드 제목 줄 수
+  RESULT_CONTENT_LINES: 3,      // 결과 카드 본문 줄 수
+  RESULT_MAX_EMOTIONS: 2,       // 결과 카드에 표시할 감정 최대 개수
+} as const
 ```
 
-#### 파일: `src/features/posts/components/SearchView.tsx` — 전면 재작성
+**효과:** 정렬 라벨 변경 시 한 곳만 수정, 카드 표시 규격 통일.
 
-앱의 `search.tsx` 구조를 웹으로 이식:
+### S3. SearchResultCard 표시 규격 통일 (D4 해결)
 
-```
-[현재 웹]                              [개선 후 웹]
-─────────────────────                ─────────────────────
-🔍 [_______________]                 🔍 [_______________] ✕
+**통일할 규격 (SEARCH_CONFIG에서 관리):**
 
-(Badge 1개)                          감정 칩 가로 스크롤 (13개)
-                                     EMOTION_COLOR_MAP 색상
+| 항목 | 통일값 | 현재 앱 | 현재 웹 |
+|------|--------|---------|---------|
+| 제목 줄 수 | 2 | 2 | 2 |
+| 본문 줄 수 | 3 | 3 | 3 |
+| 감정 태그 최대 | 2 | 2 | 2 |
+| 감정 스트라이프 | 좌측 3px | ✅ | ✅ |
+| 메타데이터 순서 | 작성자 → 👍수 → 💬수 → 날짜 | ✅ | ✅ |
 
-                                     정렬: [관련도] [최신] [인기]
+**현재 이미 거의 일치.** SEARCH_CONFIG 상수로 명시화만 진행.
 
-                                     필터 상태 바 + N건
+### S4. 정렬 버튼 스타일 통일 (D3 해결)
 
-PostCard × N                         SearchResultCard × N
-                                      (하이라이트 + 감정 태그)
-─────────────────────                ─────────────────────
+**현황:**
+- 앱: active = `happy-600` bg (golden), inactive = `stone-800` bg
+- 웹: active = `primary` bg (shadcn 테마), inactive = `muted` bg
 
-[초기 상태]
-─────────────────────
-🔍 [_______________]
+**방향:** 두 플랫폼 모두 **감정 테마 색상(happy 계열)** 사용으로 통일. 은둔마을 브랜드 컬러가 golden/happy 계열이므로 앱 스타일 기준.
 
-최근 검색어          전체 삭제
-  🕐 우울한 하루     ✕
-  🕐 직장 스트레스   ✕
+**변경:**
+- 웹: 정렬 버튼 active 스타일을 `bg-happy-500 text-white dark:bg-happy-600` 으로 변경
 
-감정으로 찾기
-  [😰불안] [😢슬픔] [😔외로움] ...
-─────────────────────
-```
+### S5. 초기 화면 "감정으로 찾기" 레이아웃 통일 (D2 해결)
 
-**주요 변경:**
+**현황:**
+- 앱: 2열 고정 grid (FlexWrap)
+- 웹: flex wrap (자연스러운 줄바꿈)
 
-| # | 항목 | 구현 |
-|---|---|---|
-| 1 | 초기 화면: 최근 검색어 | `localStorage` 기반 (앱의 `draftStorage` 대응) |
-| 2 | 초기 화면: 감정으로 찾기 그리드 | `ALLOWED_EMOTIONS` + `EMOTION_EMOJI` |
-| 3 | 감정 칩 가로 스크롤 | `overflow-x-auto flex gap-1.5` (앱의 ScrollView horizontal 대응) |
-| 4 | 정렬 토글 | `관련도순` `최신순` `인기순` 버튼 그룹 |
-| 5 | 필터 상태 바 | 검색어 + 감정 조합 표시 + N건 + 필터 해제 |
-| 6 | 하이라이트 렌더링 | `<<>>` → `<mark>` 태그 변환 |
-| 7 | 빈 상태 맞춤 메시지 | 감정/검색 조합별 (앱과 동일) |
-| 8 | 클리어 버튼 | 입력 필드 우측 X 버튼 |
-| 9 | API v2 전환 | `search_posts_v2` + 서버 사이드 감정 필터 |
-| 10 | URL 파라미터 | `?q=&emotion=&sort=` (기존 q, emotion에 sort 추가) |
-| 11 | 디바운스 | 500ms → 400ms (앱 300ms와의 중간값) |
+**방향:** **flex wrap 방식으로 통일.** 감정 13개가 모두 표시되면 2열 고정보다 자연스러운 흐름이 적합.
 
-#### 하이라이트 유틸: `src/lib/highlight.tsx`
+**변경:**
+- 앱: 2열 고정 grid → flex wrap + gap-2 (현재 웹 방식과 동일)
 
-```tsx
-import { Fragment } from 'react';
+### S6. 감정 칩 active 스타일 통일 (D7 해결)
 
-/** <<...>> 구분자 텍스트를 <mark>로 렌더링 */
-export function HighlightText({ text, className }: { text: string; className?: string }) {
-  const parts = text.split(/<<(.*?)>>/g);
+**현황:**
+- 앱: `LinearGradient` bg (EMOTION_COLOR_MAP.gradient) + border
+- 웹: `solid bg` (gradient[0]) + border
 
-  return (
-    <span className={className}>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <mark key={i} className="bg-happy-100 text-inherit rounded-sm px-0.5">
-            {part}
-          </mark>
-        ) : (
-          <Fragment key={i}>{part}</Fragment>
-        ),
-      )}
-    </span>
-  );
-}
-```
+**방향:** 웹도 gradient 적용이 이상적이나, CSS gradient + rounded-full 조합의 복잡성 대비 효과가 낮음.
+**결정:** **gradient[0] (밝은 색) + border 방식으로 통일.** 미세한 gradient 차이보다 색상 계열 일치가 중요.
 
-#### 최근 검색어 유틸: `src/lib/recent-searches.ts`
+- 앱도 gradient 대신 `gradient[0]` 단색 사용 (또는 유지 — 플랫폼 특성으로 허용 범위)
+- **판단:** 이 항목은 gradient가 앱의 시각적 품질을 높이므로, 앱은 gradient 유지하고 웹만 gradient[0] 단색 사용하는 것도 수용. **경험적 일관성** 관점에서 색상 계열만 일치하면 충분.
+
+### S7. 빈 상태 메시지 통일 (D6 해결)
+
+**방향:** 두 클라이언트 모두 `EMPTY_STATE_MESSAGES.search` 사용. 추가로 검색 모드별 빈 상태 메시지 분리.
+
+**추가할 상수:**
 
 ```typescript
-const STORAGE_KEY = 'search_recent';
-const MAX_ITEMS = 8;
-
-export function getRecentSearches(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_ITEMS) : [];
-  } catch {
-    return [];
-  }
+export const EMPTY_STATE_MESSAGES = {
+  ...기존,
+  search: { title: '검색 결과가 없어요', description: '다른 키워드로 검색하거나\n감정으로 탐색해보세요.' },
+  search_emotion: { title: '이 감정의 이야기가 아직 없어요', description: '비슷한 마음을 느끼고 있다면,\n용기 내어 이야기해 주세요.' },
 }
+```
 
-export function addRecentSearch(query: string): void {
-  if (!query.trim()) return;
-  const recent = getRecentSearches().filter((q) => q !== query);
-  recent.unshift(query.trim());
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recent.slice(0, MAX_ITEMS)));
-}
+### S8. 감정 필터 해제 UX 개선 (D5 해결)
 
-export function removeRecentSearch(query: string): string[] {
-  const recent = getRecentSearches().filter((q) => q !== query);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recent));
-  return recent;
-}
+**현황:** 웹에만 "필터 해제" 텍스트 버튼이 있음. 앱은 감정 칩 재클릭만.
 
-export function clearAllRecentSearches(): void {
-  localStorage.removeItem(STORAGE_KEY);
-}
+**방향:** 두 플랫폼 모두 **감정 칩 재클릭으로 해제** + **필터 상태바에 X 아이콘으로 해제** 지원.
+- 앱: 필터 상태바에 감정 해제 X 아이콘 추가
+- 웹: 현재 "필터 해제" 텍스트를 X 아이콘으로 변경 (더 간결)
+
+---
+
+## 4. 변경 범위 요약
+
+### 중앙 (supabase-hermit)
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `shared/constants.ts` | SEARCH_SORT_OPTIONS 추가, SEARCH_CONFIG 확장, EMPTY_STATE_MESSAGES.search_emotion 추가 |
+
+### 앱 (gns-hermit-comm)
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `src/app/search.tsx` | ALLOWED_EMOTIONS 전체 사용, 초기 감정 grid flex wrap 변경, SEARCH_SORT_OPTIONS import, 빈 상태 EMPTY_STATE_MESSAGES 사용 |
+
+### 웹 (web-hermit-comm)
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `src/features/posts/components/SearchView.tsx` | SEARCH_SORT_OPTIONS import, 정렬 버튼 happy 색상 적용, 빈 상태 EMPTY_STATE_MESSAGES 사용, 필터 해제 X 아이콘 |
+
+---
+
+## 5. 구현 순서
+
+```
+Phase 1: 중앙 상수 확장
+  ├─ S2. SEARCH_SORT_OPTIONS, SEARCH_CONFIG 확장
+  └─ S7. EMPTY_STATE_MESSAGES.search_emotion 추가
+
+Phase 2: 앱 수정
+  ├─ S1. 감정 칩 13개 (ALLOWED_EMOTIONS)
+  ├─ S5. 초기 감정 grid flex wrap
+  ├─ S8. 필터 상태바 감정 해제 X
+  └─ S7. 빈 상태 메시지 통일
+
+Phase 3: 웹 수정
+  ├─ S4. 정렬 버튼 happy 색상
+  ├─ S8. 필터 해제 X 아이콘
+  └─ S7. 빈 상태 메시지 통일
+
+Phase 4: 동기화 + 검증
+  └─ sync-to-projects.sh → verify.sh
+```
+
+**예상 영향:** DB 변경 없음, 마이그레이션 없음. 순수 프론트엔드 + 공유 상수 변경.
+
+---
+
+## 6. 스크린 와이어프레임
+
+### 6.1 초기 화면 (통일 후)
+
+```
+┌──────────────────────────────────┐
+│  [←]  [🔍 제목, 내용 검색...   ✕]│  ← 검색 입력
+├──────────────────────────────────┤
+│ [고립감🫥][무기력😶][불안😰][외로움😔][슬픔😢]...  ← 가로 스크롤 13개
+├──────────────────────────────────┤
+│                                  │
+│  최근 검색어              전체 삭제│
+│  ─────────────────────────────── │
+│  🕐 외로움 관련 글           [✕] │
+│  🕐 무기력할 때               [✕] │
+│  🕐 불안                     [✕] │
+│                                  │
+│  감정으로 찾기                    │
+│  ─────────────────────────────── │
+│  [🫥 고립감] [😶 무기력] [😰 불안]│  ← flex wrap
+│  [😔 외로움] [😢 슬픔] [💭 그리움]│
+│  [😨 두려움] [😤 답답함] [💫 설렘]│
+│  [🌱 기대감] [😮‍💨 안도감] [😌 평온함]│
+│  [😊 즐거움]                     │
+└──────────────────────────────────┘
+```
+
+### 6.2 검색 결과 (통일 후)
+
+```
+┌──────────────────────────────────┐
+│  [←]  [🔍 외로움            ✕]  │
+├──────────────────────────────────┤
+│ [고립감][무기력][불안][외로움✓]...│  ← 선택된 감정 강조
+├──────────────────────────────────┤
+│ [관련도순✓] [최신순] [인기순]    │  ← happy 색상 active
+│ '외로움' + 외로움  12건  [✕감정] │
+├──────────────────────────────────┤
+│ ┌────────────────────────────┐   │
+│ █ <<외로움>>이 밀려올 때         │  ← 감정 스트라이프 + 하이라이트
+│ █ 밤에 혼자 있으면 <<외로움>>    │
+│ █ 이 느껴져서...                 │
+│ █ [😔외로움] [😢슬픔]           │  ← 최대 2개
+│ █ 익명  👍3  💬5  3시간 전      │
+│ └────────────────────────────┘   │
+│ ┌────────────────────────────┐   │
+│ █ 직장에서의 <<외로움>>          │
+│ █ ...                            │
+│ └────────────────────────────┘   │
+│         [로딩 스켈레톤...]       │  ← 무한 스크롤
+└──────────────────────────────────┘
+```
+
+### 6.3 감정 전용 모드 (감정 칩만 선택, 텍스트 없음)
+
+```
+┌──────────────────────────────────┐
+│  [←]  [🔍 제목, 내용 검색...   ] │
+├──────────────────────────────────┤
+│ [고립감][무기력][불안✓]...       │
+├──────────────────────────────────┤
+│ 불안  24건                 [✕감정]│
+├──────────────────────────────────┤
+│ ┌────────────────────────────┐   │
+│ │ PostCard (일반 카드, 하이라이트 없음)│
+│ └────────────────────────────┘   │
+│ ┌────────────────────────────┐   │
+│ │ PostCard                       │
+│ └────────────────────────────┘   │
+└──────────────────────────────────┘
 ```
 
 ---
 
-### 2.3 Phase C: 중앙 문서 업데이트 (중앙 레포)
+## 7. 위험 요소 및 대응
 
-| 파일 | 변경 |
-|---|---|
-| `CLAUDE.md` | RPC 16개 반영 (이미 완료) |
-| `docs/SCHEMA.md` | search_posts_v2 문서 (이미 완료) |
-| `docs/DESIGN-search-improvements.md` | Phase 2~4 구현 상태 업데이트 |
-
----
-
-## 3. 구현 순서
-
-```
-Phase A: 앱 v2 전환
-  A1. src/shared/lib/api/posts.ts — searchPosts → v2 API
-  A2. src/shared/components/HighlightText.tsx — 하이라이트 컴포넌트
-  A3. src/app/search.tsx — v2 연동 + 정렬 토글 + 하이라이트 + 서버 사이드 감정 필터
-  A4. 테스트 + EAS Update 배포
-
-Phase B: 웹 v2 전환 + UX 동기화
-  B1. src/lib/recent-searches.ts — 최근 검색어 유틸
-  B2. src/lib/highlight.tsx — 하이라이트 컴포넌트
-  B3. src/features/posts/api/postsApi.ts — searchPosts → v2 API
-  B4. src/features/posts/components/SearchView.tsx — 전면 재작성
-  B5. 테스트 + Vercel 배포
-
-Phase C: 중앙 문서 최신화
-  C1. docs/DESIGN-search-improvements.md — 구현 상태 업데이트
-  C2. 커밋 + 푸시
-```
+| 위험 | 대응 |
+|------|------|
+| 앱 감정 칩 13개로 증가 시 가로 스크롤 UX | 이미 ScrollView horizontal 사용 중, 문제 없음 |
+| SEARCH_SORT_OPTIONS 추가 시 기존 import 깨짐 | 기존 코드에서 로컬 정의만 제거, named import 추가 |
+| 웹 happy 색상 클래스 미존재 | tailwind.config에 happy 색상 팔레트 이미 정의되어 있음 |
 
 ---
 
-## 4. 주의사항
+## 8. 후속 검토 (이번 범위 외)
 
-### 감정 전용 검색 (텍스트 없음)
-- `search_posts_v2`는 `p_query` 2자 미만이면 빈 결과 반환
-- 감정만 선택한 경우 기존 `get_posts_by_emotion` RPC 유지 (앱/웹 동일)
-- 향후 v2에 감정 전용 모드 추가 고려
-
-### 타입 호환성
-- `SearchResult` 인터페이스가 `Post`와 다름 (highlight, score 추가)
-- `PostCard`가 `Post | PostWithCounts` 타입 기대 → `SearchResult`도 수용하도록 확인 필요
-- 앱: `PostList`에 `SearchResult[]` 전달 시 타입 캐스팅 또는 컴포넌트 prop 확장
-
-### 기존 search_posts v1 제거
-- 앱/웹 모두 v2 전환 확인 후 별도 마이그레이션으로 DROP
-- 전환 기간 동안 v1/v2 병행 유지
-
-### URL 파라미터 (웹)
-- 기존: `?q=&emotion=`
-- 추가: `?q=&emotion=&sort=relevance`
-- 하위 호환: `sort` 없으면 `'relevance'` 기본값
-
-### 최근 검색어 저장
-- 앱: `MMKV` (`draftStorage`) — 동기식, 빠름
-- 웹: `localStorage` — SSR 시 `typeof window` 체크 필수
+- **검색 결과 이미지 썸네일**: 현재 앱/웹 모두 미표시. 추후 image_url 활용 검토
+- **검색 자동완성/추천 검색어**: DB에 검색 로그 없으므로 현재 불가
+- **감정 조합 필터 (다중 선택)**: search_posts_v2가 단일 감정만 지원, RPC 변경 필요
+- **최근 검색 클라우드 동기화**: 현재 로컬 스토리지, user_preferences 활용 가능

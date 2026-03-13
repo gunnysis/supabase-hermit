@@ -237,6 +237,7 @@ bash scripts/verify.sh --web        # 웹만 검증
 | `database.gen.ts` | MD5 해시 비교 (헤더 3줄 제외) |
 | `constants.generated.ts` | MD5 해시 비교 |
 | `database.types.ts` | MD5 해시 비교 |
+| `utils.generated.ts` | MD5 해시 비교 |
 
 ### 출력 예시
 
@@ -246,19 +247,21 @@ bash scripts/verify.sh --web        # 웹만 검증
 
 --- [앱] /mnt/c/.../gns-hermit-comm ---
   [migrations]
-    = 파일 수 일치 (8)
+    = 파일 수 일치 (26)
   = config.toml
   = database.gen.ts
   = constants.generated.ts
   = database.types.ts
+  = utils.generated.ts
 
 --- [웹] /home/gunny/apps/web-hermit-comm ---
   [migrations]
-    = 파일 수 일치 (8)
+    = 파일 수 일치 (26)
   = config.toml
   = database.gen.ts
   = constants.generated.ts
   = database.types.ts
+  = utils.generated.ts
 
 검증 완료: 모든 파일 동기화 상태
 ```

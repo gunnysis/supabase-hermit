@@ -34,9 +34,10 @@ supabase-hermit/
 │       ├── 20260317000001_post_analysis_rls.sql         # post_analysis SELECT: 인증된 사용자만
 │       ├── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
 │       ├── 20260318000001_boards_constraints.sql        # boards 이름/설명 길이 CHECK 제약조건
-│       └── 20260319000001_remove_group_board_system.sql # 그룹/게시판 시스템 완전 제거
+│       ├── 20260319000001_remove_group_board_system.sql # 그룹/게시판 시스템 완전 제거
+│       └── 20260320000001_advisor_performance_security.sql # RLS initplan 최적화 + search_path + extension 이동
 ├── shared/
-│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION 등)
+│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
 │   └── utils.ts                    # 공유 순수 함수 (validatePostInput, validateCommentInput)
 ├── types/
@@ -51,12 +52,11 @@ supabase-hermit/
 │   ├── SCRIPTS.md                  # 스크립트 사용법 상세
 │   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
 │   ├── plan/                       # 진행 예정/진행 중 설계 문서
-│   │   ├── expected/               # 유지보수 계획 (v1, v2, v3 실행계획서)
-│   │   ├── memo/                   # 연구/분석 메모 (리팩토링 가이드, 감정분석 가이드)
-│   │   ├── DESIGN-emotion-upgrade.md  # 감정분석 업그레이드 E1-E3 설계
-│   │   └── IMPLEMENTATION-GUIDE.md    # 구현 가이드 (Phase별 실행 참고)
-│   ├── complete/                   # 구현 완료 설계 문서 아카이브
-│   └── backup/                     # 대체된 설계 문서 보관
+│   │   └── memo/                   # 연구/분석 메모 (리팩토링 가이드, 감정분석 가이드)
+│   ├── holding/                    # 보류 중 설계 문서 (YouTube 영상 등)
+│   ├── complete/                   # 구현 완료 설계 문서 아카이브 (11개)
+│   ├── backup/                     # 대체된 설계 문서 보관
+│   └── Supabase Advisors/          # Supabase Performance Advisor 리포트
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
 └── CLAUDE.md
@@ -184,6 +184,7 @@ npm run verify        # 레포 간 정합성 검증
 - **공유 상수/타입/유틸은 `shared/`에서만 수정** — `shared/constants.ts`, `shared/types.ts`, `shared/utils.ts`는 sync로 앱/웹에 배포. 앱/웹의 generated 파일 직접 수정 금지. `utils.ts`에는 외부 import 없는 순수 함수만 추가할 것
 - **Expo SDK 업그레이드 시 `npx expo install --fix` 필수** — `npm install expo@~XX.0.0`만으로는 companion 패키지가 업데이트되지 않아 EAS Build 실패 위험. 반드시 `npx expo install --fix` → `npx expo install --check` → `npx expo-doctor` 순서 실행
 - **앱 빌드 전 `bash scripts/pre-build-check.sh`** — SDK 호환성, TypeScript, expo-doctor, 중앙 sync, 테스트 5단계 검증. EAS Build 트리거 전 로컬에서 실행
+- **감정 칩 표준 스타일** — 모든 인터랙티브 감정 칩은 `rounded-full px-3 py-1.5 text-xs` 통일. 활성: `EMOTION_COLOR_MAP[emotion].gradient[0]` bg + `font-semibold`, 비활성: 앱 `bg-stone-100 dark:bg-stone-800` / 웹 `bg-muted`. 새 감정 칩 UI 추가 시 이 표준을 따를 것
 
 ## Claude 역할
 
@@ -231,6 +232,5 @@ npm run verify        # 레포 간 정합성 검증
 - [DB 스키마 상세](docs/SCHEMA.md) — 테이블/뷰/함수/RLS/트리거/제약조건/Edge Functions 전체
 - [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh, verify.sh 상세
 - [클라이언트 아키텍처](docs/CLIENT-ARCHITECTURE.md) — 앱/웹 심리분석 흐름, 공유 코드 관리, Realtime 패턴
-- [유지보수 실행 계획](docs/plan/expected/) — v3 릴리스 계획 (R1-R5)
-- [감정분석 업그레이드 설계](docs/plan/DESIGN-emotion-upgrade.md) — E1-E3 단계별 업그레이드
-- [구현 완료 아카이브](docs/complete/) — 홈 UX, 검색, 관리자, 감정분석, EAS 빌드 방지 등 완료된 설계 문서
+- [감정분석 업그레이드 설계](docs/backup/DESIGN-emotion-upgrade.md) — E1-E3 단계별 업그레이드 (E1 완료, E2-E3 미착수)
+- [구현 완료 아카이브](docs/complete/) — 유지보수 v1-v3, 검색, 관리자, 감정분석, EAS 빌드 방지, 검색 동기화 등 완료된 설계 문서 (11개)

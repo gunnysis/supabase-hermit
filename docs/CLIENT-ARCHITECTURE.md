@@ -1,6 +1,6 @@
 # 클라이언트 아키텍처 — 은둔마을
 
-> 최종 업데이트: 2026-03-13 (v7: Phase E1 반영, 그룹 시스템 제거 반영, re-export 목록 갱신)
+> 최종 업데이트: 2026-03-13 (v8: SEARCH_SORT_OPTIONS re-export 추가, 구조 정리)
 
 앱(React Native/Expo)과 웹(Next.js)이 공유하는 Supabase 백엔드 연동 구조를 정리한 문서.
 
@@ -27,7 +27,7 @@
 앱: src/shared/lib/constants.ts
   → export { ALLOWED_EMOTIONS, EMOTION_EMOJI, REACTION_COLOR_MAP, SHARED_PALETTE,
              EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES,
-             SEARCH_HIGHLIGHT, SEARCH_CONFIG, ADMIN_CONSTANTS,
+             SEARCH_HIGHLIGHT, SEARCH_CONFIG, SEARCH_SORT_OPTIONS, ADMIN_CONSTANTS,
              ANALYSIS_STATUS, ANALYSIS_CONFIG, VALIDATION } from './constants.generated'
   → export type { AllowedEmotion, ReactionColorKey } from './constants.generated'
   → + 앱 전용 상수 (ALIAS_ADJECTIVES, ALIAS_ANIMALS, PAGE_SIZE 등)
@@ -38,7 +38,7 @@
 웹: src/lib/constants.ts
   → export { ALLOWED_EMOTIONS, EMOTION_EMOJI, REACTION_COLOR_MAP, SHARED_PALETTE,
              EMOTION_COLOR_MAP, MOTION, EMPTY_STATE_MESSAGES, GREETING_MESSAGES,
-             SEARCH_HIGHLIGHT, SEARCH_CONFIG, ADMIN_CONSTANTS } from './constants.generated'
+             SEARCH_HIGHLIGHT, SEARCH_CONFIG, SEARCH_SORT_OPTIONS, ADMIN_CONSTANTS } from './constants.generated'
   → + 웹 전용 상수 (VALIDATION, ADJECTIVES, ANIMALS, PAGE_SIZE 등)
 
 웹: src/types/database.ts
@@ -265,7 +265,7 @@ src/features/posts/hooks/usePostDetailAnalysis.ts
 src/features/posts/components/
   ├─ EmotionTags.tsx         → EMOTION_EMOJI
   ├─ CommunityPulse.tsx      → EMOTION_EMOJI, EMOTION_COLOR_MAP (감정 버블 시각화)
-  ├─ EmotionFilterBar.tsx    → ALLOWED_EMOTIONS, EMOTION_COLOR_MAP (감정 필터 칩)
+  ├─ EmotionFilterBar.tsx    → ALLOWED_EMOTIONS, EMOTION_COLOR_MAP (홈 피드 + 감정 필터 칩)
   ├─ TrendingPosts.tsx       → 트렌딩 게시글 가로 스크롤
   ├─ GreetingBanner.tsx      → GREETING_MESSAGES (시간대별 인사)
   ├─ MoodSelector.tsx        → EMOTION_COLOR_MAP (글쓰기 감정 선택)

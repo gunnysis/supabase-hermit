@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
 > 최종 업데이트: 2026-03-19
-> 마이그레이션 26개 적용 완료
+> 마이그레이션 27개 적용 완료
 
 ---
 
@@ -502,6 +502,7 @@ supabase
 | 24 | `20260317000002_reactions_rls_cleanup.sql` | reactions/user_reactions 직접 쓰기 RLS 5개 정책 제거 (toggle_reaction RPC 전용) |
 | 25 | `20260318000001_boards_constraints.sql` | boards 이름/설명 길이 CHECK 제약조건 (name ≤ 100, description ≤ 500) |
 | 26 | `20260319000001_remove_group_board_system.sql` | 그룹/게시판 시스템 완전 제거: groups/group_members 테이블 DROP, posts/comments/boards에서 group_id/member_id/board_id 컬럼 제거, is_group_member/cleanup_orphan_group_members RPC 제거 |
+| 27 | `20260320000001_advisor_performance_security.sql` | RLS initplan 최적화 (auth.uid()→(select auth.uid())) 6개 정책, get_post_reactions search_path 설정, pg_trgm extensions 스키마 이동 |
 
 ---
 

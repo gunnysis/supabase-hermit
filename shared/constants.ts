@@ -74,6 +74,7 @@ export const EMPTY_STATE_MESSAGES = {
   comments: { title: '아직 댓글이 없어요', description: '따뜻한 한마디가\n누군가에게 큰 위로가 될 수 있어요.' },
   recommendations: { title: '추천할 이야기를 찾고 있어요', description: '곧 비슷한 마음의 이야기를\n찾아드릴게요.' },
   search: { title: '검색 결과가 없어요', description: '다른 키워드로 검색하거나\n감정으로 탐색해보세요.' },
+  search_emotion: { title: '이 감정의 이야기가 아직 없어요', description: '비슷한 마음을 느끼고 있다면,\n용기 내어 이야기해 주세요.' },
 } as const
 
 /** 시간대별 인사말 */
@@ -90,6 +91,13 @@ export const SEARCH_HIGHLIGHT = {
   dark: '#664E00',
 } as const
 
+/** 검색 정렬 옵션 (앱/웹 공유) */
+export const SEARCH_SORT_OPTIONS = [
+  { value: 'relevance', label: '관련도순' },
+  { value: 'recent', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+] as const
+
 /** 검색 설정 */
 export const SEARCH_CONFIG = {
   DEBOUNCE_MS: 400,
@@ -97,6 +105,10 @@ export const SEARCH_CONFIG = {
   MIN_QUERY_LENGTH: 2,
   RECENT_MAX: 8,
   STALE_TIME_MS: 30_000,
+  EMOTION_ONLY_LIMIT: 50,
+  RESULT_TITLE_LINES: 2,
+  RESULT_CONTENT_LINES: 3,
+  RESULT_MAX_EMOTIONS: 2,
 } as const
 
 /** 관리자 관련 상수 */
