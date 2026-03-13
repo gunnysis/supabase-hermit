@@ -35,7 +35,8 @@ supabase-hermit/
 │       ├── 20260317000002_reactions_rls_cleanup.sql      # reactions/user_reactions 직접 쓰기 정책 제거
 │       ├── 20260318000001_boards_constraints.sql        # boards 이름/설명 길이 CHECK 제약조건
 │       ├── 20260319000001_remove_group_board_system.sql # 그룹/게시판 시스템 완전 제거
-│       └── 20260320000001_advisor_performance_security.sql # RLS initplan 최적화 + search_path + extension 이동
+│       ├── 20260320000001_advisor_performance_security.sql # RLS initplan 최적화 + search_path + extension 이동
+│       └── 20260321000001_admin_cleanup_test_data.sql    # 관리자 전용 테스트 데이터 정리 RPC
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
@@ -79,7 +80,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
 
-### RPC 함수 (14개)
+### RPC 함수 (16개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -96,6 +97,8 @@ supabase-hermit/
 | `get_my_activity_summary()` | 내 활동 요약 (글/댓글/반응/스트릭) |
 | `search_posts_v2(query, emotion, sort, limit, offset)` | 게시글 검색 v2 (풀텍스트 + 관련도 + 하이라이트) |
 | `cleanup_stuck_analyses()` | 5분+ stuck 감정분석 자동 failed 전환 |
+| `admin_cleanup_posts(user_id?, before?, after?)` | 관리자 전용: 테스트 글 hard delete (CASCADE) |
+| `admin_cleanup_comments(user_id?, before?, after?)` | 관리자 전용: 테스트 댓글 hard delete |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
