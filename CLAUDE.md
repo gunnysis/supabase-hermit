@@ -36,7 +36,8 @@ supabase-hermit/
 │       ├── 20260318000001_boards_constraints.sql        # boards 이름/설명 길이 CHECK 제약조건
 │       ├── 20260319000001_remove_group_board_system.sql # 그룹/게시판 시스템 완전 제거
 │       ├── 20260320000001_advisor_performance_security.sql # RLS initplan 최적화 + search_path + extension 이동
-│       └── 20260321000001_admin_cleanup_test_data.sql    # 관리자 전용 테스트 데이터 정리 RPC
+│       ├── 20260321000001_admin_cleanup_test_data.sql    # 관리자 전용 테스트 데이터 정리 RPC
+│       └── 20260322000001_fix_analysis_cooldown.sql      # 감정분석 쿨다운 버그 수정 (analyzed_at NULL 허용)
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
