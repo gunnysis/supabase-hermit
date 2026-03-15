@@ -155,3 +155,31 @@ export const SHARED_PALETTE = {
   peach:    { 50: '#FFF7F0', 100: '#FFEFE0', 200: '#FFDFC2', 300: '#FFCFA3', 400: '#FFBF85', 500: '#FFAF66', 600: '#E69952', 700: '#CC833E', 800: '#B36D29', 900: '#995715' },
   cream:    { 50: '#FFFEF5', 100: '#FFFCEB', 200: '#FFF9D6', 300: '#FFF5C2', 400: '#FFF2AD', 500: '#FFEF99' },
 } as const
+
+/** 오늘의 하루 — 활동 프리셋 태그 (은둔자 관점: 쉬운 것부터) */
+export const ACTIVITY_PRESETS = [
+  { id: 'rest', name: '휴식', icon: '😴' },
+  { id: 'self_care', name: '자기관리', icon: '🚿' },
+  { id: 'meal', name: '식사', icon: '🍚' },
+  { id: 'hobby', name: '취미', icon: '🎮' },
+  { id: 'cleaning', name: '정리', icon: '🧹' },
+  { id: 'writing', name: '글쓰기', icon: '📝' },
+  { id: 'learning', name: '배움', icon: '📚' },
+  { id: 'exercise', name: '운동', icon: '💪' },
+  { id: 'social', name: '소통', icon: '💬' },
+  { id: 'outdoor', name: '외출', icon: '🚶' },
+] as const
+
+/** 오늘의 하루 — 설정 */
+export const DAILY_CONFIG = {
+  MAX_EMOTIONS: 3,
+  MAX_ACTIVITIES: 5,
+  MAX_NOTE_LENGTH: 200,
+  MAX_CUSTOM_ACTIVITY_LENGTH: 20,
+} as const
+
+/** 오늘의 하루 — 인사이트 설정 */
+export const DAILY_INSIGHTS_CONFIG = {
+  MIN_DAILIES_FOR_INSIGHTS: 7,
+  MIN_ACTIVITY_COUNT: 3,
+} as const

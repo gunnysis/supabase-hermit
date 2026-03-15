@@ -8,7 +8,7 @@
 supabase-hermit/
 ├── supabase/
 │   ├── config.toml                 # Supabase 프로젝트 설정
-│   └── migrations/                 # 모든 마이그레이션 원본 (26개)
+│   └── migrations/                 # 모든 마이그레이션 원본 (35개)
 │       ├── 20260301000001_schema.sql              # 베이스라인: 테이블/함수/뷰/트리거/인덱스
 │       ├── 20260301000002_rls.sql                 # 베이스라인: RLS 정책
 │       ├── 20260301000003_infra.sql               # 베이스라인: 권한(grants) + Storage
@@ -37,9 +37,15 @@ supabase-hermit/
 │       ├── 20260319000001_remove_group_board_system.sql # 그룹/게시판 시스템 완전 제거
 │       ├── 20260320000001_advisor_performance_security.sql # RLS initplan 최적화 + search_path + extension 이동
 │       ├── 20260321000001_admin_cleanup_test_data.sql    # 관리자 전용 테스트 데이터 정리 RPC
-│       └── 20260322000001_fix_analysis_cooldown.sql      # 감정분석 쿨다운 버그 수정 (analyzed_at NULL 허용)
+│       ├── 20260322000001_fix_analysis_cooldown.sql      # 감정분석 쿨다운 버그 수정 (analyzed_at NULL 허용)
+│       ├── 20260323000001_daily_post.sql                # 오늘의 하루: posts 확장, 트리거 조건, 뷰 재생성, RPC 3개
+│       ├── 20260324000001_daily_insights.sql            # 나의 패턴: 활동-감정 인사이트 RPC
+│       ├── 20260325000001_anonymous_alias.sql           # v2: 고정 익명 별칭 + 자동 부여 트리거
+│       ├── 20260325000002_comment_replies.sql           # v2: 댓글 답글 (parent_id, 1단계)
+│       ├── 20260325000003_notifications.sql             # v2: In-App 알림 + 자동 생성 트리거
+│       └── 20260325000004_user_blocks.sql               # v2: 사용자 차단
 ├── shared/
-│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION 등)
+│   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
 │   └── utils.ts                    # 공유 순수 함수 (validatePostInput, validateCommentInput)
 ├── types/
@@ -54,6 +60,7 @@ supabase-hermit/
 │   ├── SCRIPTS.md                  # 스크립트 사용법 상세
 │   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
 │   ├── plan/                       # 진행 예정/진행 중 설계 문서
+│   │   ├── baj/                    # 오늘의 하루 (BA 연구/설계/구현, Phase 0-2a 완료)
 │   │   └── memo/                   # 연구/분석 메모 (리팩토링 가이드, 감정분석 가이드)
 │   ├── holding/                    # 보류 중 설계 문서 (YouTube 영상 등)
 │   ├── complete/                   # 구현 완료 설계 문서 아카이브 (11개)
@@ -66,22 +73,24 @@ supabase-hermit/
 
 ## DB 스키마 요약
 
-### 테이블 (8개)
+### 테이블 (10개)
 | 테이블 | 설명 |
 |---|---|
 | `boards` | 게시판 (익명모드 설정) |
-| `posts` | 게시글 (소프트삭제 지원, 자동 감정 분석, initial_emotions) |
-| `comments` | 댓글 (소프트삭제 지원) |
+| `posts` | 게시글 (소프트삭제, 자동 감정분석, initial_emotions, post_type: post/daily, activities) |
+| `comments` | 댓글 (소프트삭제, **parent_id로 1단계 답글**) |
 | `reactions` | 리액션 집계 (post_id + reaction_type 별 count) |
 | `user_reactions` | 사용자별 리액션 기록 |
 | `post_analysis` | AI 감정 분석 결과 (emotions 배열, status/retry_count/error_reason) |
-| `user_preferences` | 사용자 설정 (감정 선호, 테마, 온보딩) |
+| `user_preferences` | 사용자 설정 (감정 선호, 테마, 온보딩, **display_alias 고정 별칭**) |
 | `app_admin` | 앱 관리자 |
+| `notifications` | **In-App 알림** (reaction/comment/reply, actor_alias, read) |
+| `user_blocks` | **사용자 차단** (blocker_id + blocked_alias) |
 
 ### 뷰 (1개)
-- `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 (security_invoker)
+- `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 + post_type + activities (security_invoker)
 
-### RPC 함수 (16개)
+### RPC 함수 (28개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -100,11 +109,24 @@ supabase-hermit/
 | `cleanup_stuck_analyses()` | 5분+ stuck 감정분석 자동 failed 전환 |
 | `admin_cleanup_posts(user_id?, before?, after?)` | 관리자 전용: 테스트 글 hard delete (CASCADE) |
 | `admin_cleanup_comments(user_id?, before?, after?)` | 관리자 전용: 테스트 댓글 hard delete |
+| `create_daily_post(emotions, activities?, content?)` | 오늘의 하루 생성 (posts + post_analysis 원자적, 하루 1회 KST) |
+| `update_daily_post(post_id, emotions, activities?, content?)` | 오늘의 하루 수정 (posts + post_analysis 동기화) |
+| `get_today_daily()` | 오늘(KST) 내 daily 게시글 조회 (홈 진입점용) |
+| `get_daily_activity_insights(days?)` | 나의 패턴: 활동-감정 상관관계 (7일+ daily 필요) |
+| `generate_display_alias()` | 고정 익명 별칭 생성 (30×30 풀 + 충돌 시 숫자 접미사) |
+| `get_my_alias()` | 내 별칭 조회 |
+| `get_notifications(limit, offset)` | 알림 목록 조회 (최신순) |
+| `get_unread_notification_count()` | 미읽음 알림 수 |
+| `mark_notifications_read(ids)` | 선택 알림 읽음 처리 |
+| `mark_all_notifications_read()` | 전체 알림 읽음 처리 |
+| `block_user(alias)` | 특정 별칭 차단 |
+| `unblock_user(alias)` | 차단 해제 |
+| `get_blocked_aliases()` | 차단 별칭 목록 조회 |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
 |---|---|---|
-| `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, 60초 쿨다운, 서버 재시도 2회) |
+| `analyze-post` | X | DB Trigger (게시글 INSERT/UPDATE시 자동 호출, **post_type='post'만**, 60초 쿨다운, 서버 재시도 2회) |
 | `analyze-post-on-demand` | O | 수동 감정 분석 요청 (fallback + 재시도, 쿨다운 우회, 서버 재시도 2회) |
 
 > **Phase E1 (2026-03-13, 배포 완료)**: 한국어 전문 프롬프트 + Gemini Structured Output 적용. emotions 외에 risk_level/risk_indicators/context_notes를 로그 기록 (DB 저장은 Phase E2 예정). 설계: `docs/plan/DESIGN-emotion-upgrade.md`
@@ -189,6 +211,7 @@ npm run verify        # 레포 간 정합성 검증
 - **Expo SDK 업그레이드 시 `npx expo install --fix` 필수** — `npm install expo@~XX.0.0`만으로는 companion 패키지가 업데이트되지 않아 EAS Build 실패 위험. 반드시 `npx expo install --fix` → `npx expo install --check` → `npx expo-doctor` 순서 실행
 - **앱 빌드 전 `bash scripts/pre-build-check.sh`** — SDK 호환성, TypeScript, expo-doctor, 중앙 sync, 테스트 5단계 검증. EAS Build 트리거 전 로컬에서 실행
 - **감정 칩 표준 스타일** — 모든 인터랙티브 감정 칩은 `rounded-full px-3 py-1.5 text-xs` 통일. 활성: `EMOTION_COLOR_MAP[emotion].gradient[0]` bg + `font-semibold`, 비활성: 앱 `bg-stone-100 dark:bg-stone-800` / 웹 `bg-muted`. 새 감정 칩 UI 추가 시 이 표준을 따를 것
+- **오늘의 하루 (daily post)** — `posts` 테이블의 `post_type='daily'` 경량 게시글. 같은 피드에 표시, 같은 리액션/댓글/Realtime/RLS. 감정분석 트리거는 `post_type='post'`만 발동. daily는 `create_daily_post()` RPC로 post_analysis 직접 생성 (AI skip). 활동 태그는 `ACTIVITY_PRESETS` 상수 기반. 설계: `docs/plan/baj/DESIGN.md`
 
 ## Claude 역할
 

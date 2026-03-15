@@ -33,6 +33,8 @@ export interface Post {
   emotions?: string[] | null
   initial_emotions?: string[] | null
   image_url?: string | null
+  post_type?: 'post' | 'daily'
+  activities?: string[] | null
 }
 
 /** 좋아요·댓글 수 포함 게시글 (posts_with_like_count 뷰) */
@@ -40,6 +42,8 @@ export interface PostWithCounts extends Post {
   like_count: number
   comment_count: number
   emotions: string[] | null
+  post_type: 'post' | 'daily'
+  activities: string[] | null
 }
 
 export interface PostAnalysis {
@@ -64,6 +68,7 @@ export interface Comment {
   board_id?: number | null
   is_anonymous: boolean
   display_name: string
+  parent_id?: number | null
 }
 
 export interface Reaction {
