@@ -208,6 +208,45 @@ export interface SearchResult {
   relevance_score: number
 }
 
+/** In-App 알림 (notifications 테이블) */
+export interface Notification {
+  id: number
+  type: NotificationType
+  post_id: number | null
+  comment_id: number | null
+  actor_alias: string | null
+  read: boolean
+  created_at: string
+}
+
+/** 알림 타입 */
+export type NotificationType = 'reaction' | 'comment' | 'reply'
+
+/** 사용자 차단 (user_blocks 테이블) */
+export interface UserBlock {
+  id: number
+  blocker_id: string
+  blocked_alias: string
+  created_at: string
+}
+
+/** 나의 패턴 인사이트 (get_daily_activity_insights RPC 반환 타입) */
+export interface ActivityInsight {
+  activity: string
+  total_count: number
+  emotions: { emotion: string; count: number }[]
+  top_emotion: string
+}
+
+/** 나의 활동 요약 (get_my_activity_summary RPC 반환 타입) */
+export interface ActivitySummary {
+  post_count: number
+  comment_count: number
+  reaction_count: number
+  streak_days: number
+  first_post_at: string | null
+}
+
 // 응답 타입
 export type GetPostsResponse = Post[]
 export type GetPostResponse = Post

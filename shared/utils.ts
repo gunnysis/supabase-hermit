@@ -19,6 +19,19 @@ export function validatePostInput(input: {
   return null
 }
 
+/** 오늘의 하루 입력 검증 — 유효하면 null, 에러 시 메시지 반환 */
+export function validateDailyPostInput(input: {
+  emotions: string[]
+  activities?: string[]
+  content?: string
+}): string | null {
+  if (!input.emotions.length) return '감정을 하나 이상 선택해주세요.'
+  if (input.emotions.length > 3) return '감정은 최대 3개까지 선택할 수 있어요.'
+  if (input.activities && input.activities.length > 5) return '활동은 최대 5개까지 선택할 수 있어요.'
+  if (input.content && input.content.length > 200) return '한마디는 200자 이내로 입력해주세요.'
+  return null
+}
+
 /** 댓글 입력 검증 — 유효하면 null, 에러 시 메시지 반환 */
 export function validateCommentInput(content: string): string | null {
   const trimmed = content.trim()

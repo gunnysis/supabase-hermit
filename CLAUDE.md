@@ -8,7 +8,7 @@
 supabase-hermit/
 ├── supabase/
 │   ├── config.toml                 # Supabase 프로젝트 설정
-│   └── migrations/                 # 모든 마이그레이션 원본 (35개)
+│   └── migrations/                 # 모든 마이그레이션 원본 (37개)
 │       ├── 20260301000001_schema.sql              # 베이스라인: 테이블/함수/뷰/트리거/인덱스
 │       ├── 20260301000002_rls.sql                 # 베이스라인: RLS 정책
 │       ├── 20260301000003_infra.sql               # 베이스라인: 권한(grants) + Storage
@@ -44,11 +44,12 @@ supabase-hermit/
 │       ├── 20260325000002_comment_replies.sql           # v2: 댓글 답글 (parent_id, 1단계)
 │       ├── 20260325000003_notifications.sql             # v2: In-App 알림 + 자동 생성 트리거
 │       ├── 20260325000004_user_blocks.sql               # v2: 사용자 차단
-│       └── 20260326000001_v2_improvements.sql           # v2 점검: 타임존 수정, 별칭 레이스컨디션, 알림/차단 개선
+│       ├── 20260326000001_v2_improvements.sql           # v2 점검: 타임존 수정, 별칭 레이스컨디션, 알림/차단 개선
+│       └── 20260327000001_v3_refinement.sql            # v3 정비: post_type CHECK, 알림 인덱스, 별칭 partial unique, analyzed_at 기본값, 답글 검증 트리거
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
-│   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment 등)
-│   └── utils.ts                    # 공유 순수 함수 (validatePostInput, validateCommentInput)
+│   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
+│   └── utils.ts                    # 공유 순수 함수 (validatePostInput, validateCommentInput, validateDailyPostInput)
 ├── types/
 │   └── database.gen.ts             # 자동 생성 DB 타입 (gen-types.sh 산출물)
 ├── scripts/
@@ -60,6 +61,11 @@ supabase-hermit/
 │   ├── SCHEMA.md                   # DB 스키마 상세 문서
 │   ├── SCRIPTS.md                  # 스크립트 사용법 상세
 │   ├── CLIENT-ARCHITECTURE.md      # 앱/웹 클라이언트 연동 아키텍처
+│   ├── audit/                      # 코드베이스 분석 스냅샷 (대화 시작 시 참조)
+│   │   ├── central-audit.md        # 중앙 레포 현황 (마이그레이션, RPC, 타입, 스크립트)
+│   │   ├── web-audit.md            # 웹 레포 현황 (구조, API, 훅, 컴포넌트)
+│   │   ├── app-audit.md            # 앱 레포 현황 (구조, API, 훅, 컴포넌트)
+│   │   └── tech-debt.md            # 3개 레포 기술부채 + 개선 백로그
 │   ├── plan/                       # 진행 예정/진행 중 설계 문서
 │   │   ├── baj/                    # 오늘의 하루 (BA 연구/설계/구현, Phase 0-2a 완료)
 │   │   └── memo/                   # 연구/분석 메모 (리팩토링 가이드, 감정분석 가이드)
@@ -231,6 +237,7 @@ npm run verify        # 레포 간 정합성 검증
 - **shared/ 변경 시** — CLAUDE.md의 동기화 대상 + constants/types/utils 설명 업데이트
 - **완료된 설계 문서** — `docs/complete/`로 이동
 - **메모리 갱신** — 구현 완료된 작업은 MEMORY.md에 요약 기록, architecture.md에 구조 변경 반영
+- **audit 갱신** — 작업 완료 후 변경된 레포의 `docs/audit/*.md` + `tech-debt.md` 즉시 업데이트. 새 대화 시작 시 audit 파일 4개를 먼저 읽고 전체 현황을 파악한 후 작업 시작
 
 ## needs.md 운용 규칙
 

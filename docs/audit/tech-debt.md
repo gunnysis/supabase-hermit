@@ -1,0 +1,79 @@
+# 기술부채 + 개선 백로그
+
+> **최종 갱신**: 2026-03-16
+
+## 범례
+- `[ ]` 미착수 | `[~]` 진행중 | `[x]` 완료
+
+---
+
+## P0 — 긴급 (서비스 영향)
+
+모두 해결됨.
+
+---
+
+## P1 — 높음 (품질/안전)
+
+### DB
+- [x] post_type CHECK 제약조건 (v3, 2026-03-16)
+- [x] post_analysis.analyzed_at 기본값 NULL (v3, 2026-03-16)
+- [x] 알림 페이지네이션 인덱스 (v3, 2026-03-16)
+- [x] display_alias partial unique index (v3, 2026-03-16)
+- [x] 답글 유효성 검증 트리거 (v3, 2026-03-16)
+
+### 타입
+- [x] shared/types.ts에 Notification, UserBlock, ActivityInsight, ActivitySummary 추가 (v3)
+- [x] 웹 `as any` 6곳 제거 (v2+v3, 2026-03-16)
+- [x] 웹 DailyPostForm `<any>` 2곳 → 구체적 타입 (v3)
+- [x] 웹 Notification 타입 중앙 통합 (v3)
+
+### 유틸
+- [x] validateDailyPostInput() 추가 (v3)
+
+---
+
+## P2 — 중간 (개선)
+
+### DB
+- [ ] groups/group_members 레거시 테이블 완전 DROP (현재 사용 안 함, 코드 참조 없음)
+- [ ] user_blocks.blocked_alias FK 또는 정리 정책 — 탈퇴 사용자 별칭 orphan 가능
+- [ ] ANALYSIS_CONFIG.COOLDOWN_SECONDS DB config 테이블로 이동 (Phase E)
+- [ ] 타임존 로직 단일 함수로 통합 (Edge Function + DB RPC 양쪽에 KST 로직 산재)
+
+### 웹
+- [ ] 웹 테스트 커버리지 확대 (현재 3개 → 핵심 훅/API 커버)
+- [ ] useUnreadCount 30초 폴링 → Realtime 구독 전환
+- [ ] 에러 바운더리 컴포넌트 추가 (전역)
+- [ ] PostDetailView 200+ 라인 → 서브 컴포넌트 분리
+- [ ] Realtime 구독 패턴 추출 (useRealtimeChannel 공통 훅)
+- [ ] 캐시 무효화 전략 세분화 (`['boardPosts']` 전체 → `['boardPosts', boardId]`)
+
+### 앱
+- [ ] 테스트 커버리지 확대 (현재 6파일/121테스트 → 핵심 API 훅 커버)
+- [ ] Realtime 채널 수 모니터링 (다수 화면 동시 구독 시 성능)
+- [ ] EmotionCalendar/EmotionWaveNative 메모이제이션 점검
+
+---
+
+## P3 — 낮음 (닦기)
+
+### 문서
+- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 37개)
+- [ ] docs/plan/DESIGN-v2-improvements.md → docs/complete/ 이동
+- [ ] docs/plan/v2-type-refactor.md → docs/complete/ 이동 (구현 완료)
+- [ ] docs/plan/DESIGN-v3-refinement.md → docs/complete/ 이동
+
+### 코드
+- [ ] 웹 localStorage 날짜 패턴 유틸로 추출 (배너 상태 2곳)
+- [ ] 웹 낙관적 업데이트 패턴 공통화 (useComments 3x, useReactions)
+- [ ] search_posts_v2 COMMENT ON FUNCTION 추가 (v1 대체 문서화)
+
+---
+
+## 완료 이력
+
+| 날짜 | 항목 | 마이그레이션 |
+|------|------|------------|
+| 2026-03-16 | v2 점검: 타임존, 별칭 레이스컨디션, 알림/차단 | #36 |
+| 2026-03-16 | v3 정비: CHECK, 인덱스, 타입, 유틸, 웹 타입 안전성 | #37 |
