@@ -86,4 +86,5 @@
 | 2026-03-16 | v2 점검: 타임존, 별칭 레이스컨디션, 알림/차단 | #36 |
 | 2026-03-16 | v3 정비: CHECK, 인덱스, 타입, 유틸, 웹 타입 안전성 | #37 |
 | 2026-03-17 | overflow 방지: FlashList, RenderHTML, display_name truncate, 에디터 maxHeight | — |
-| 2026-03-17 | 오늘의 하루 Evolution: generated column, 별칭, RPC 3개 신규, insights KST, 마이크로인터랙션 | #39 |
+| 2026-03-17 | daily Evolution P1+P2: generated column, 별칭, RPC 3개, insights KST, 마이크로인터랙션, 주간회고, 커스텀활동, motion | #39 |
+| 2026-03-17 | daily Evolution P3: Push 리마인더 설정 UI (expo-notifications, 4시간대, 옵트인) | — |
