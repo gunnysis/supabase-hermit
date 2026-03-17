@@ -243,8 +243,7 @@ export interface ActivitySummary {
   post_count: number
   comment_count: number
   reaction_count: number
-  streak_days: number
-  first_post_at: string | null
+  streak: number
 }
 
 // 응답 타입
