@@ -51,9 +51,9 @@
 
 ### UX/기능
 - [x] 빈 글 제출 방지 — stripHtmlForValidation으로 빈 HTML 차단 (2026-03-17)
-- [ ] 오늘의 하루 바텀시트 체크인 — @gorhom/bottom-sheet 설치 완료, UI 전환 필요
-- [ ] 오늘의 하루 스트릭 보상 — 마일스톤(7/30/100일) + streak freeze + 배지 UI
-- [ ] 감정 흐름 차트 — victory-native + @shopify/react-native-skia 설치/호환성 테스트 후 구현
+- [x] 오늘의 하루 바텀시트 체크인 — DailyBottomSheet (3단계 snap 프로그레시브 디스클로저, 2026-03-17)
+- [x] 오늘의 하루 스트릭 보상 — get_my_streak RPC + StreakBadge (마일스톤 5단계 + streak freeze, #43, 2026-03-17)
+- [x] 감정 흐름 차트 — EmotionTrendChart 순수 View 기반 (Skia 불필요, 2026-03-17)
 - [x] pg_cron 자동화 — cleanup_stuck_analyses 5분마다 (#42, Dashboard pg_cron 활성화 필요)
 - [x] 댓글 페이지네이션 — 웹 getComments limit=100 추가 (2026-03-17)
 
