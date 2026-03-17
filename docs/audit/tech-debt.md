@@ -1,6 +1,6 @@
 # 기술부채 + 개선 백로그
 
-> **최종 갱신**: 2026-03-16
+> **최종 갱신**: 2026-03-17
 
 ## 범례
 - `[ ]` 미착수 | `[~]` 진행중 | `[x]` 완료
@@ -30,6 +30,14 @@
 
 ### 유틸
 - [x] validateDailyPostInput() 추가 (v3)
+
+### UI Overflow 방지 (2026-03-17)
+- [x] 앱 FlashList getItemType (post/daily 재활용 풀 분리)
+- [x] 앱 PostBody RenderHTML `<pre>` 커스텀 렌더러 (수평 ScrollView) + blockquote overflow hidden
+- [x] 앱 PostCard/PostDetailBody/CommentItem display_name `truncate` + `flex-shrink` + `max-w-[60%]`
+- [x] 앱 CommentItem 답글 들여쓰기 ml-8→ml-6
+- [x] 앱 ContentEditor maxHeight 400
+- [x] 웹 PostCard/CommentItem display_name `truncate` + `max-w-[60%]`
 
 ---
 
@@ -77,3 +85,4 @@
 |------|------|------------|
 | 2026-03-16 | v2 점검: 타임존, 별칭 레이스컨디션, 알림/차단 | #36 |
 | 2026-03-16 | v3 정비: CHECK, 인덱스, 타입, 유틸, 웹 타입 안전성 | #37 |
+| 2026-03-17 | overflow 방지: FlashList, RenderHTML, display_name truncate, 에디터 maxHeight | — |
