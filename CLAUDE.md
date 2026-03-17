@@ -45,7 +45,8 @@ supabase-hermit/
 │       ├── 20260325000003_notifications.sql             # v2: In-App 알림 + 자동 생성 트리거
 │       ├── 20260325000004_user_blocks.sql               # v2: 사용자 차단
 │       ├── 20260326000001_v2_improvements.sql           # v2 점검: 타임존 수정, 별칭 레이스컨디션, 알림/차단 개선
-│       └── 20260327000001_v3_refinement.sql            # v3 정비: post_type CHECK, 알림 인덱스, 별칭 partial unique, analyzed_at 기본값, 답글 검증 트리거
+│       ├── 20260327000001_v3_refinement.sql            # v3 정비: post_type CHECK, 알림 인덱스, 별칭 partial unique, analyzed_at 기본값, 답글 검증 트리거
+│       └── 20260328000001_mypage_rpc_optimization.sql  # v4: RPC KST 타임존 + INVOKER + 범위 비교 최적화
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
