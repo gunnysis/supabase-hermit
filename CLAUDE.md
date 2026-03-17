@@ -67,13 +67,9 @@ supabase-hermit/
 │   │   ├── web-audit.md            # 웹 레포 현황 (구조, API, 훅, 컴포넌트)
 │   │   ├── app-audit.md            # 앱 레포 현황 (구조, API, 훅, 컴포넌트)
 │   │   └── tech-debt.md            # 3개 레포 기술부채 + 개선 백로그
-│   ├── plan/                       # 진행 예정/진행 중 설계 문서
-│   │   ├── baj/                    # 오늘의 하루 (BA 연구/설계/구현, Phase 0-2a 완료)
-│   │   └── memo/                   # 연구/분석 메모 (리팩토링 가이드, 감정분석 가이드)
-│   ├── holding/                    # 보류 중 설계 문서 (YouTube 영상 등)
-│   ├── complete/                   # 구현 완료 설계 문서 아카이브 (11개)
-│   ├── backup/                     # 대체된 설계 문서 보관
-│   └── Supabase Advisors/          # Supabase Performance Advisor 리포트
+│   ├── plan/                       # 진행 예정/진행 중 설계 문서 (활성 문서만)
+│   ├── archive/                    # 완료된 설계 문서 아카이브 (complete+backup+memo 통합)
+│   └── reference/                  # 외부 참조 (Supabase Advisor, 보류 중 설계)
 ├── package.json                    # npm scripts 편의용 (의존성 없음)
 ├── .env                            # SUPABASE_ACCESS_TOKEN (git 제외)
 └── CLAUDE.md
@@ -236,7 +232,7 @@ npm run verify        # 레포 간 정합성 검증
 - **구현 완료 후 문서 갱신** — CLAUDE.md (스키마 요약, RPC 목록 등), docs/SCHEMA.md, MEMORY.md 반영
 - **마이그레이션 추가 시** — CLAUDE.md의 마이그레이션 목록 + DB 스키마 요약 즉시 업데이트
 - **shared/ 변경 시** — CLAUDE.md의 동기화 대상 + constants/types/utils 설명 업데이트
-- **완료된 설계 문서** — `docs/complete/`로 이동
+- **완료된 설계 문서** — `docs/archive/`로 이동
 - **메모리 갱신** — 구현 완료된 작업은 MEMORY.md에 요약 기록, architecture.md에 구조 변경 반영
 - **audit 갱신** — 작업 완료 후 변경된 레포의 `docs/audit/*.md` + `tech-debt.md` 즉시 업데이트. 새 대화 시작 시 audit 파일 4개를 먼저 읽고 전체 현황을 파악한 후 작업 시작
 
@@ -268,5 +264,5 @@ npm run verify        # 레포 간 정합성 검증
 - [DB 스키마 상세](docs/SCHEMA.md) — 테이블/뷰/함수/RLS/트리거/제약조건/Edge Functions 전체
 - [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh, verify.sh 상세
 - [클라이언트 아키텍처](docs/CLIENT-ARCHITECTURE.md) — 앱/웹 심리분석 흐름, 공유 코드 관리, Realtime 패턴
-- [감정분석 업그레이드 설계](docs/backup/DESIGN-emotion-upgrade.md) — E1-E3 단계별 업그레이드 (E1 완료, E2-E3 미착수)
-- [구현 완료 아카이브](docs/complete/) — 유지보수 v1-v3, 검색, 관리자, 감정분석, EAS 빌드 방지, 검색 동기화 등 완료된 설계 문서 (11개)
+- [감정분석 업그레이드 설계](docs/archive/DESIGN-emotion-upgrade.md) — E1-E3 단계별 업그레이드 (E1 완료, E2-E3 미착수)
+- [구현 완료 아카이브](docs/archive/) — 유지보수 v1-v3, 검색, 관리자, 감정분석, EAS 빌드 방지, 검색 동기화 등 완료된 설계 문서
