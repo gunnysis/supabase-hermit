@@ -13,5 +13,19 @@
       "mcp__ide__getDiagnostics",
       "mcp__ide__executeCode"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-push-cleanup-check.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
