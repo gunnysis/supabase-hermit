@@ -294,6 +294,7 @@ bash scripts/verify.sh --web        # 웹만 검증
 | `npm run sync` | `bash scripts/sync-to-projects.sh` |
 | `npm run sync:dry` | `bash scripts/sync-to-projects.sh --dry` |
 | `npm run verify` | `bash scripts/verify.sh` |
+| `npm run backup-memory` | `bash scripts/backup-memory.sh` |
 
 ---
 
@@ -318,6 +319,26 @@ npm run push
   │
   └─ 4. verify.sh --quiet  (정합성 자동 검증)
 ```
+
+---
+
+## backup-memory.sh — Claude 메모리 백업
+
+Claude 메모리 파일(`~/.claude/projects/.../memory/`)을 `docs/reference/memory-backup-latest.md`로 백업.
+
+### 특징
+- **변경 감지**: MD5 체크섬 비교 → 변경 시에만 백업 파일 갱신
+- **자동 실행**: Claude SessionEnd hook으로 대화 종료 시 자동 실행
+- **수동 실행**: `npm run backup-memory`
+
+### 사용법
+```bash
+bash scripts/backup-memory.sh   # 또는 npm run backup-memory
+```
+
+### 출력
+- 변경 있음: `✅ 메모리 백업 완료: .../memory-backup-latest.md (10개 파일, 시각)`
+- 변경 없음: `✅ 메모리 변경 없음 — 백업 스킵`
 
 ---
 
