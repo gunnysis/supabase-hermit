@@ -46,7 +46,8 @@ supabase-hermit/
 │       ├── 20260325000004_user_blocks.sql               # v2: 사용자 차단
 │       ├── 20260326000001_v2_improvements.sql           # v2 점검: 타임존 수정, 별칭 레이스컨디션, 알림/차단 개선
 │       ├── 20260327000001_v3_refinement.sql            # v3 정비: post_type CHECK, 알림 인덱스, 별칭 partial unique, analyzed_at 기본값, 답글 검증 트리거
-│       └── 20260328000001_mypage_rpc_optimization.sql  # v4: RPC KST 타임존 + INVOKER + 범위 비교 최적화
+│       ├── 20260328000001_mypage_rpc_optimization.sql  # v4: RPC KST 타임존 + INVOKER + 범위 비교 최적화
+│       └── 20260329000001_daily_evolution.sql          # daily Evolution: generated column, 별칭, RPC 신규 3개, insights KST, custom_activities
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
@@ -94,7 +95,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 + post_type + activities (security_invoker)
 
-### RPC 함수 (28개)
+### RPC 함수 (31개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -126,6 +127,9 @@ supabase-hermit/
 | `block_user(alias)` | 특정 별칭 차단 |
 | `unblock_user(alias)` | 차단 해제 |
 | `get_blocked_aliases()` | 차단 별칭 목록 조회 |
+| `get_yesterday_daily_reactions()` | 어제 daily 반응 (KST 서버 계산) |
+| `get_same_mood_dailies(post_id, emotions)` | 같은 감정 daily 3개 (오늘 KST) |
+| `get_weekly_emotion_summary(week_offset)` | 주간 감정 요약 (Top 5 감정, Top 활동) |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
