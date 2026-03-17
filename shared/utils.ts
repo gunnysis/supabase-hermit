@@ -40,3 +40,97 @@ export function validateCommentInput(content: string): string | null {
   return null
 }
 
+/** 감정 타임라인 바 데이터 가공 (단일 패스) */
+export interface TimelineBarSegment {
+  emotion: string
+  count: number
+  pct: number
+}
+
+export interface TimelineBar {
+  day: string
+  weekday: string
+  isToday: boolean
+  segments: TimelineBarSegment[]
+  total: number
+}
+
+export interface ProcessedTimeline {
+  bars: TimelineBar[]
+  topEmotions: string[]
+  maxTotal: number
+  topEmotion: string | null
+}
+
+const KO_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const
+
+export function processEmotionTimeline(
+  entries: { day: string; emotion: string; cnt: number }[],
+): ProcessedTimeline {
+  if (!entries.length) return { bars: [], topEmotions: [], maxTotal: 0, topEmotion: null }
+
+  // Single pass: group by day + accumulate emotion totals
+  const byDay = new Map<string, Map<string, number>>()
+  const emotionTotals = new Map<string, number>()
+
+  for (const entry of entries) {
+    const cnt = Number(entry.cnt)
+    if (!byDay.has(entry.day)) byDay.set(entry.day, new Map())
+    byDay.get(entry.day)!.set(entry.emotion, cnt)
+    emotionTotals.set(entry.emotion, (emotionTotals.get(entry.emotion) ?? 0) + cnt)
+  }
+
+  // Top 5 emotions by total
+  const topEmotions = [...emotionTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([e]) => e)
+  const topSet = new Set(topEmotions)
+
+  // Today (KST)
+  const now = new Date()
+  const kstMs = now.getTime() + 9 * 60 * 60 * 1000
+  const todayStr = new Date(kstMs).toISOString().slice(0, 10)
+
+  // Build bars sorted by date
+  const sortedDays = [...byDay.keys()].sort()
+  let maxTotal = 0
+
+  const bars: TimelineBar[] = sortedDays.map((day) => {
+    const dayMap = byDay.get(day)!
+    const segments: TimelineBarSegment[] = []
+    let total = 0
+
+    for (const emotion of topEmotions) {
+      const count = dayMap.get(emotion) ?? 0
+      if (count > 0) {
+        segments.push({ emotion, count, pct: 0 })
+        total += count
+      }
+    }
+
+    // Calculate percentages
+    for (const seg of segments) {
+      seg.pct = total > 0 ? Math.round((seg.count / total) * 100) : 0
+    }
+
+    if (total > maxTotal) maxTotal = total
+
+    const date = new Date(day + 'T00:00:00')
+    return {
+      day,
+      weekday: KO_WEEKDAYS[date.getDay()],
+      isToday: day === todayStr,
+      segments,
+      total,
+    }
+  })
+
+  return {
+    bars,
+    topEmotions,
+    maxTotal: Math.max(maxTotal, 1),
+    topEmotion: topEmotions[0] ?? null,
+  }
+}
+
