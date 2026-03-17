@@ -10,6 +10,7 @@
     "gen-types": "bash scripts/gen-types.sh",
     "sync": "bash scripts/sync-to-projects.sh",
     "sync:dry": "bash scripts/sync-to-projects.sh --dry",
-    "verify": "bash scripts/verify.sh"
+    "verify": "bash scripts/verify.sh",
+    "backup-memory": "bash scripts/backup-memory.sh"
   }
 }
