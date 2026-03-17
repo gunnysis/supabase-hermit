@@ -49,6 +49,14 @@
 - [ ] ANALYSIS_CONFIG.COOLDOWN_SECONDS DB config 테이블로 이동 (Phase E)
 - [ ] 타임존 로직 단일 함수로 통합 (Edge Function + DB RPC 양쪽에 KST 로직 산재)
 
+### UX/기능
+- [ ] 빈 글 제출 방지 — 제목/내용 모두 비어있으면 제출 차단 (id:94 사례)
+- [ ] 오늘의 하루 바텀시트 체크인 — @gorhom/bottom-sheet 설치 완료, UI 전환 필요
+- [ ] 오늘의 하루 스트릭 보상 — 마일스톤(7/30/100일) + streak freeze + 배지 UI
+- [ ] 감정 흐름 차트 — victory-native + @shopify/react-native-skia 설치/호환성 테스트 후 구현
+- [ ] pg_cron 자동화 — stuck 분석 정리(5분), 일일 감정 요약(자정 KST) Dashboard 설정
+- [ ] 댓글 페이지네이션 — 현재 무제한 조회, limit/offset 추가 필요
+
 ### 웹
 - [ ] 웹 테스트 커버리지 확대 (현재 3개 → 핵심 훅/API 커버)
 - [ ] useUnreadCount 30초 폴링 → Realtime 구독 전환
