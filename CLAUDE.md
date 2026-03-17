@@ -47,7 +47,11 @@ supabase-hermit/
 │       ├── 20260326000001_v2_improvements.sql           # v2 점검: 타임존 수정, 별칭 레이스컨디션, 알림/차단 개선
 │       ├── 20260327000001_v3_refinement.sql            # v3 정비: post_type CHECK, 알림 인덱스, 별칭 partial unique, analyzed_at 기본값, 답글 검증 트리거
 │       ├── 20260328000001_mypage_rpc_optimization.sql  # v4: RPC KST 타임존 + INVOKER + 범위 비교 최적화
-│       └── 20260329000001_daily_evolution.sql          # daily Evolution: generated column, 별칭, RPC 신규 3개, insights KST, custom_activities
+│       ├── 20260329000001_daily_evolution.sql          # daily Evolution: generated column, 별칭, RPC 신규 3개, insights KST, custom_activities
+│       ├── 20260329000002_fix_today_daily_reactions.sql # get_today_daily: heart만 + comment_count
+│       ├── 20260329000003_side_effects_fix.sql         # soft_delete 알림 정리, daily 재작성 방어
+│       ├── 20260329000004_pg_cron_setup.sql            # pg_cron: stuck 분석 5분 자동 정리
+│       └── 20260329000005_streak_rewards.sql           # 스트릭 보상: get_my_streak RPC + 마일스톤
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
@@ -82,12 +86,12 @@ supabase-hermit/
 | 테이블 | 설명 |
 |---|---|
 | `boards` | 게시판 (익명모드 설정) |
-| `posts` | 게시글 (소프트삭제, 자동 감정분석, initial_emotions, post_type: post/daily, activities) |
+| `posts` | 게시글 (소프트삭제, 자동 감정분석, initial_emotions, post_type: post/daily, activities, **created_date_kst** generated) |
 | `comments` | 댓글 (소프트삭제, **parent_id로 1단계 답글**) |
 | `reactions` | 리액션 집계 (post_id + reaction_type 별 count) |
 | `user_reactions` | 사용자별 리액션 기록 |
 | `post_analysis` | AI 감정 분석 결과 (emotions 배열, status/retry_count/error_reason) |
-| `user_preferences` | 사용자 설정 (감정 선호, 테마, 온보딩, **display_alias 고정 별칭**) |
+| `user_preferences` | 사용자 설정 (감정 선호, 테마, 온보딩, **display_alias**, custom_activities, longest_streak, last_milestone) |
 | `app_admin` | 앱 관리자 |
 | `notifications` | **In-App 알림** (reaction/comment/reply, actor_alias, read) |
 | `user_blocks` | **사용자 차단** (blocker_id + blocked_alias) |
@@ -95,7 +99,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 + post_type + activities (security_invoker)
 
-### RPC 함수 (31개)
+### RPC 함수 (32개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -130,6 +134,7 @@ supabase-hermit/
 | `get_yesterday_daily_reactions()` | 어제 daily 반응 (KST 서버 계산) |
 | `get_same_mood_dailies(post_id, emotions)` | 같은 감정 daily 3개 (오늘 KST) |
 | `get_weekly_emotion_summary(week_offset)` | 주간 감정 요약 (Top 5 감정, Top 활동) |
+| `get_my_streak()` | daily 스트릭 (연속/총/최장 + 마일스톤 + streak freeze) |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
