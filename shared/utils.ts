@@ -85,7 +85,6 @@ export function processEmotionTimeline(
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([e]) => e)
-  const topSet = new Set(topEmotions)
 
   // Today (KST)
   const now = new Date()
