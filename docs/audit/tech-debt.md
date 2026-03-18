@@ -100,3 +100,4 @@
 | 2026-03-18 | 마이페이지 동기화: 웹 SectionErrorBoundary, 로그아웃 경고, 앱 캘린더 범례/스켈레톤, 문구 통일 | — |
 | 2026-03-18 | 에러 전략 통일: API throw 표준화, QueryCache/MutationCache 전역 토스트, meta.silent, 죽은코드 삭제 | — |
 | 2026-03-18 | 마이페이지 UX 폴리시: WeeklySummary 스켈레톤/빈상태, EmotionWave 키보드접근, BlockedUsers 개별isPending | — |
+| 2026-03-18 | 마이페이지 종합: 인증 안정화(SIGNED_OUT 재세션+캐시클리어), 코드품질(useQueries+getActivityLabel중앙+ErrorBoundary로깅), 디자인(문구버그+칩표준+색상통일) | — |

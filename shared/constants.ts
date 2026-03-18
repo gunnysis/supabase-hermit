@@ -47,6 +47,9 @@ export const EMOTION_COLOR_MAP: Record<string, {
   '즐거움': { family: 'happy',    gradient: ['#FFF3CC', '#FFDB66'], category: 'positive' },
 }
 
+/** 감정 색상 폴백 (EMOTION_COLOR_MAP에 없는 감정용) */
+export const EMOTION_FALLBACK_COLOR = '#E7D7FF'
+
 /** 모션 프리셋 (앱/웹 공유) */
 export const MOTION = {
   spring: {

@@ -1,9 +1,9 @@
 # Claude 메모리 백업
 
-> 자동 생성: 2026-03-17 20:37:59
+> 자동 생성: 2026-03-17 23:38:28
 > 소스: `~/.claude/projects/-home-gunny-apps-supabase-hermit/memory/`
-> 파일 수: 10개
-> 체크섬: `35f1634ae5008bb50d891375691a367a`
+> 파일 수: 13개
+> 체크섬: `c374f8ded7c930f4b81c2a2cb33a8ee7`
 
 ---
 
@@ -12,7 +12,7 @@
 ```markdown
 # 은둔마을 Supabase 중앙 프로젝트 메모리
 
-> 정리일: 2026-03-17 | 파일 10개 | 백업: `docs/reference/memory-backup-20260317.md`
+> 정리일: 2026-03-17 | 파일 13개 | 백업: `docs/reference/memory-backup-latest.md` (자동)
 
 ## 프로젝트 핵심
 - 앱(Expo SDK 55) + 웹(Next.js 16) + 중앙(Supabase) 3개 레포
@@ -38,6 +38,9 @@
 | [feedback_expo_upgrade.md](feedback_expo_upgrade.md) | Expo SDK 업그레이드 시 `npx expo install --fix` 필수 |
 | [feedback_no_preset_words.md](feedback_no_preset_words.md) | 사용자 감정/말에 프리셋 상수 금지 |
 | [feedback_v2_lessons.md](feedback_v2_lessons.md) | v2 교훈: 서비스 정체성, 사이드이펙트, 전수점검 후 한번에 |
+| [feedback_sync_detail.md](feedback_sync_detail.md) | 앱/웹 동기화 세부 대조: 아이콘, 조건부 표시, 접근성, 문구 통일 |
+| [feedback_side_effect_checklist.md](feedback_side_effect_checklist.md) | 검증 단계에서 사이드이펙트 6문항 자동 체크 (삭제연쇄/동기화/TZ/에러/캐시/호환성) |
+| [feedback_track_todos.md](feedback_track_todos.md) | "다음에 할 것" 대화에서만 언급 금지 — tech-debt.md에 반드시 기록 |
 
 ## 주의사항 (Quick Ref)
 - WSL 환경 — `sed -i 's/\r$//'`
@@ -222,6 +225,67 @@ type: feedback
 
 ---
 
+## feedback_side_effect_checklist.md
+
+```markdown
+---
+name: 사이드 이펙트 자동 체크리스트
+description: 모든 구현 작업의 검증 단계에서 6가지 사이드 이펙트 질문을 자동으로 통과시킴
+type: feedback
+---
+
+모든 구현 작업의 **검증 단계**에서 아래 6가지를 자동으로 체크한다.
+
+## 검증 단계 자동 실행 — 사이드 이펙트 6문항
+
+| # | 질문 | 검증 방법 |
+|---|------|----------|
+| 1 | **삭제/변경의 연쇄 효과** — 이 데이터가 삭제/변경되면 다른 테이블/뷰/알림에 영향은? | DB FK, CASCADE, 관련 테이블 확인 |
+| 2 | **앱/웹 동기화** — 양쪽에 같은 변경이 반영됐는가? 아이콘, 문구, 조건부 표시, 접근성 동일한가? | 양쪽 파일 나란히 비교 (5항목 체크) |
+| 3 | **타임존** — KST 날짜 비교가 정확한가? 서버/클라이언트 어디서 계산하는가? | RPC는 kst_date(), 클라이언트에 수동 KST 없는지 확인 |
+| 4 | **에러 경로** — 실패 시 사용자에게 어떻게 보이는가? 조용히 실패하지 않는가? | onError 핸들러, Toast/Alert 존재 확인 |
+| 5 | **캐시 정합성** — mutation 후 관련 쿼리 캐시를 모두 무효화했는가? staleTime 동안 오래된 데이터가 보이지 않는가? | invalidateQueries 키 목록 확인 |
+| 6 | **새 라이브러리 호환성** — 설치한 패키지가 Expo SDK / Next.js 버전과 호환되는가? 런타임 에러 없는가? | tsc + 빌드 + 실제 동작 확인 (motion/react #310 사례) |
+
+## 적용 방식
+
+- 워크플로 "검증" 단계 진입 시 6문항을 내부적으로 체크
+- 하나라도 문제가 있으면 구현으로 돌아가 수정 후 재검증
+- TypeScript/테스트 통과만으로 검증 완료하지 않음 — 6문항 통과 후 배포
+
+**Why:** DailyPostCard 리액션 아이콘 불일치, motion/react 무한 렌더, soft_delete 알림 orphan 등 tsc/테스트로는 잡히지 않는 사이드 이펙트가 반복 발생. 이 체크리스트가 마지막 방어선 역할.
+
+**How to apply:** 검증 단계에서 6문항 빠르게 통과. 결과는 검증 섹션에 간결하게 포함. 문제 발견 시 즉시 수정 후 재배포.
+```
+
+---
+
+## feedback_sync_detail.md
+
+```markdown
+---
+name: 앱/웹 동기화 세부 사항 점검
+description: 컴포넌트 구현 시 앱/웹 간 아이콘, 조건부 표시, 접근성, 텍스트가 동일한지 반드시 대조 확인
+type: feedback
+---
+
+앱/웹에 같은 기능을 구현할 때, 세부 사항까지 동기화되었는지 반드시 대조 확인한다.
+
+## 체크리스트
+
+1. **아이콘/이모지 동일** — 한쪽에 ❤️💬가 있으면 다른 쪽에도
+2. **조건부 표시 동일** — 0일 때 숨기기, 빈 배열일 때 숨기기 등
+3. **접근성 동일** — 앱 accessibilityLabel ↔ 웹 aria-label
+4. **텍스트/문구 동일** — "N명이 공감" 등 표현 통일
+5. **스타일 패턴 유사** — 정확히 같을 순 없지만 시각적 의미가 동일
+
+**Why:** DailyPostCard 리액션 영역에서 웹은 아이콘 없이 숫자만 표시, 0일 때도 표시하는 등 사소한 차이가 있었음. 이런 것들이 쌓이면 앱/웹 간 경험 차이가 생김.
+
+**How to apply:** 앱/웹 동시 수정 시 양쪽 파일을 나란히 읽고 5개 항목 대조. 한쪽만 수정하고 끝내지 않는다.
+```
+
+---
+
 ## feedback_test_data.md
 
 ```markdown
@@ -249,6 +313,27 @@ type: feedback
 - 비차단(non-blocking) — push를 막지는 않지만 경고를 무시하지 말 것
 
 **Why:** 테스트 데이터가 프로덕션에 남아 사용자가 수동 삭제한 사고 2회 발생 (2026-03-15).
+```
+
+---
+
+## feedback_track_todos.md
+
+```markdown
+---
+name: 미구현 항목은 tech-debt.md에 기록
+description: 대화에서 "다음에 할 것"을 언급하면 반드시 tech-debt.md에도 기록. 대화는 휘발되지만 문서는 남는다.
+type: feedback
+---
+
+"다음에 할 수 있는 것"을 대화에서만 언급하고 끝내지 않는다. 반드시 `docs/audit/tech-debt.md`에 기록한다.
+
+**Why:** 대화는 세션이 끝나면 사라진다. 미구현 항목을 대화에서만 언급하면 다음 세션에서 누락된다. tech-debt.md가 유일한 추적 장소.
+
+**How to apply:**
+- 작업 완료 시 "아직 미구현" 항목이 있으면 → tech-debt.md P2/P3에 추가
+- 설계 문서 삭제 시 → 미구현 항목을 tech-debt.md로 이동 후 삭제
+- "다음에 할게요"라고 말한 순간 → tech-debt.md에 기록했는지 확인
 ```
 
 ---

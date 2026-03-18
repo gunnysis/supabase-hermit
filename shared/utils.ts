@@ -134,3 +134,12 @@ export function processEmotionTimeline(
   }
 }
 
+/** 활동 ID → 아이콘 + 이름 라벨 변환 (외부 import 없는 순수 함수) */
+export function getActivityLabel(
+  id: string,
+  presets: readonly { id: string; icon: string; name: string }[]
+): string {
+  const preset = presets.find((p) => p.id === id)
+  return preset ? `${preset.icon} ${preset.name}` : id
+}
+
