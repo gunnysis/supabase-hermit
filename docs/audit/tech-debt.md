@@ -99,3 +99,4 @@
 | 2026-03-17 | daily Evolution P3: Push 리마인더 설정 UI (expo-notifications, 4시간대, 옵트인) | — |
 | 2026-03-18 | 마이페이지 동기화: 웹 SectionErrorBoundary, 로그아웃 경고, 앱 캘린더 범례/스켈레톤, 문구 통일 | — |
 | 2026-03-18 | 에러 전략 통일: API throw 표준화, QueryCache/MutationCache 전역 토스트, meta.silent, 죽은코드 삭제 | — |
+| 2026-03-18 | 마이페이지 UX 폴리시: WeeklySummary 스켈레톤/빈상태, EmotionWave 키보드접근, BlockedUsers 개별isPending | — |
