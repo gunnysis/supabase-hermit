@@ -98,3 +98,4 @@
 | 2026-03-17 | daily Evolution P1+P2: generated column, 별칭, RPC 3개, insights KST, 마이크로인터랙션, 주간회고, 커스텀활동, motion | #39 |
 | 2026-03-17 | daily Evolution P3: Push 리마인더 설정 UI (expo-notifications, 4시간대, 옵트인) | — |
 | 2026-03-18 | 마이페이지 동기화: 웹 SectionErrorBoundary, 로그아웃 경고, 앱 캘린더 범례/스켈레톤, 문구 통일 | — |
+| 2026-03-18 | 에러 전략 통일: API throw 표준화, QueryCache/MutationCache 전역 토스트, meta.silent, 죽은코드 삭제 | — |
