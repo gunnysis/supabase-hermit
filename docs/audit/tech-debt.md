@@ -1,6 +1,6 @@
 # 기술부채 + 개선 백로그
 
-> **최종 갱신**: 2026-03-17
+> **최종 갱신**: 2026-03-18
 
 ## 범례
 - `[ ]` 미착수 | `[~]` 진행중 | `[x]` 완료
@@ -60,7 +60,8 @@
 ### 웹
 - [ ] 웹 테스트 커버리지 확대 (현재 3개 → 핵심 훅/API 커버)
 - [ ] useUnreadCount 30초 폴링 → Realtime 구독 전환
-- [ ] 에러 바운더리 컴포넌트 추가 (전역)
+- [x] 마이페이지 섹션별 에러 바운더리 (SectionErrorBoundary, 2026-03-18)
+- [ ] 에러 바운더리 컴포넌트 추가 (전역 — 마이페이지 외 나머지)
 - [ ] PostDetailView 200+ 라인 → 서브 컴포넌트 분리
 - [ ] Realtime 구독 패턴 추출 (useRealtimeChannel 공통 훅)
 - [ ] 캐시 무효화 전략 세분화 (`['boardPosts']` 전체 → `['boardPosts', boardId]`)
@@ -96,3 +97,4 @@
 | 2026-03-17 | overflow 방지: FlashList, RenderHTML, display_name truncate, 에디터 maxHeight | — |
 | 2026-03-17 | daily Evolution P1+P2: generated column, 별칭, RPC 3개, insights KST, 마이크로인터랙션, 주간회고, 커스텀활동, motion | #39 |
 | 2026-03-17 | daily Evolution P3: Push 리마인더 설정 UI (expo-notifications, 4시간대, 옵트인) | — |
+| 2026-03-18 | 마이페이지 동기화: 웹 SectionErrorBoundary, 로그아웃 경고, 앱 캘린더 범례/스켈레톤, 문구 통일 | — |

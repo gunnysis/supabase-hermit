@@ -1,6 +1,6 @@
 # 웹 레포 (web-hermit-comm) 분석 스냅샷
 
-> **최종 갱신**: 2026-03-17 | **Next.js 16.1.6** | **React 19.2.3** | **파일**: 119개
+> **최종 갱신**: 2026-03-18 | **Next.js 16.1.6** | **React 19.2.3** | **파일**: 119개
 
 ## 통계 요약
 
@@ -73,8 +73,9 @@ src/
 - **훅**: useComments(postId) — Realtime + 낙관적 업데이트
 
 ### my/
-- **컴포넌트**: DailyInsights
-- **훅**: useCreateDaily(), useUpdateDaily(), useDailyInsights(), useTodayDaily()
+- **API**: getActivitySummary, getEmotionTimeline, getUserEmotionCalendar, getMyAlias
+- **컴포넌트**: ProfileSection, StreakBadge, WeeklySummary, EmotionTrendChart, DailyInsights, BlockedUsersSection, SectionErrorBoundary
+- **훅**: useActivitySummary, useMyAlias, useCreateDaily(), useUpdateDaily(), useDailyInsights(), useTodayDaily(), useEmotionTimeline
 
 ### notifications/
 - **API**: getNotifications, getUnreadCount, markNotificationsRead, markAllRead
