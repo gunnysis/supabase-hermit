@@ -1,16 +1,16 @@
 # 중앙 레포 (supabase-hermit) 분석 스냅샷
 
-> **최종 갱신**: 2026-03-16 | **마이그레이션**: 37개 | **RPC**: 30개(public) + 13개(internal)
+> **최종 갱신**: 2026-03-21 | **마이그레이션**: 44개 | **RPC**: 33개(public) + 14개(internal)
 
 ## 통계 요약
 
 | 항목 | 수량 |
 |------|------|
-| 마이그레이션 | 37 |
-| 테이블 | 10 (groups/group_members 레거시 잔존하나 실사용 안 함) |
+| 마이그레이션 | 44 |
+| 테이블 | 10 (groups/group_members는 migration 26에서 DROP 완료) |
 | 뷰 | 1 (posts_with_like_count) |
-| Public RPC | 30 |
-| Internal 함수 | 13 |
+| Public RPC | 33 |
+| Internal 함수 | 14 |
 | 트리거 | 17 |
 | shared 타입 exports | 42 |
 | shared 상수 exports | 21 |
@@ -61,6 +61,13 @@
 | 35 | 20260325000004_user_blocks.sql | v2: 사용자 차단 |
 | 36 | 20260326000001_v2_improvements.sql | v2 점검 (타임존, 별칭, 알림, 차단) |
 | 37 | 20260327000001_v3_refinement.sql | v3: post_type CHECK, 알림 인덱스, 별칭 유니크, analyzed_at, 답글 검증 |
+| 38 | 20260328000001_mypage_rpc_optimization.sql | RPC KST 타임존 + INVOKER + 범위 비교 최적화 |
+| 39 | 20260329000001_daily_evolution.sql | generated column, 별칭, RPC 신규 3개, insights KST, custom_activities |
+| 40 | 20260329000002_fix_today_daily_reactions.sql | get_today_daily: heart만 + comment_count |
+| 41 | 20260329000003_side_effects_fix.sql | soft_delete 알림 정리, daily 재작성 방어 |
+| 42 | 20260329000004_pg_cron_setup.sql | pg_cron: stuck 분석 5분 자동 정리 |
+| 43 | 20260329000005_streak_rewards.sql | 스트릭 보상: get_my_streak RPC + 마일스톤 |
+| 44 | 20260330000001_legacy_cleanup.sql | 레거시 정리: user_blocks 인덱스 + RPC COMMENT 33개 |
 
 ---
 
@@ -81,7 +88,7 @@
 
 ---
 
-## Public RPC 함수 (30개)
+## Public RPC 함수 (33개)
 
 ### CORE (2)
 - `toggle_reaction(post_id, type)` — SECURITY DEFINER + advisory lock
@@ -129,6 +136,12 @@
 - `mark_notifications_read(ids[])`
 - `mark_all_notifications_read()`
 
+### DAILY EVOLUTION (4)
+- `get_yesterday_daily_reactions()` — 어제 daily 반응 (KST 서버 계산)
+- `get_same_mood_dailies(post_id, emotions)` — 같은 감정 daily 3개 (오늘 KST)
+- `get_weekly_emotion_summary(week_offset)` — 주간 감정 요약 (Top 5 감정, Top 활동)
+- `get_my_streak()` — daily 스트릭 (연속/총/최장 + 마일스톤 + streak freeze)
+
 ### USER BLOCKS (3)
 - `block_user(alias)`
 - `unblock_user(alias)`
@@ -136,7 +149,7 @@
 
 ---
 
-## Internal 함수 (13개)
+## Internal 함수 (14개)
 
 | 함수 | 용도 |
 |------|------|
@@ -152,6 +165,7 @@
 | set_post_display_alias() | 게시글 별칭 자동 설정 |
 | set_comment_display_alias() | 댓글 별칭 자동 설정 |
 | assign_alias_on_insert() | 별칭 자동 부여 |
+| kst_date() | KST 날짜 변환 헬퍼 |
 | cleanup_orphan_group_members() | 레거시 정리 |
 
 ---

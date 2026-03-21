@@ -51,7 +51,8 @@ supabase-hermit/
 │       ├── 20260329000002_fix_today_daily_reactions.sql # get_today_daily: heart만 + comment_count
 │       ├── 20260329000003_side_effects_fix.sql         # soft_delete 알림 정리, daily 재작성 방어
 │       ├── 20260329000004_pg_cron_setup.sql            # pg_cron: stuck 분석 5분 자동 정리
-│       └── 20260329000005_streak_rewards.sql           # 스트릭 보상: get_my_streak RPC + 마일스톤
+│       ├── 20260329000005_streak_rewards.sql           # 스트릭 보상: get_my_streak RPC + 마일스톤
+│       └── 20260330000001_legacy_cleanup.sql           # 레거시 정리: user_blocks 인덱스 + RPC COMMENT 문서화 (33개)
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
@@ -99,7 +100,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 + post_type + activities (security_invoker)
 
-### RPC 함수 (32개)
+### RPC 함수 (33개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |

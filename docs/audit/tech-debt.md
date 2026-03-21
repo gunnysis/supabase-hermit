@@ -1,6 +1,6 @@
 # 기술부채 + 개선 백로그
 
-> **최종 갱신**: 2026-03-18
+> **최종 갱신**: 2026-03-21
 
 ## 범례
 - `[ ]` 미착수 | `[~]` 진행중 | `[x]` 완료
@@ -44,8 +44,8 @@
 ## P2 — 중간 (개선)
 
 ### DB
-- [ ] groups/group_members 레거시 테이블 완전 DROP (현재 사용 안 함, 코드 참조 없음)
-- [ ] user_blocks.blocked_alias FK 또는 정리 정책 — 탈퇴 사용자 별칭 orphan 가능
+- [x] groups/group_members 레거시 테이블 완전 DROP (migration 26에서 완료, 2026-03-19)
+- [ ] user_blocks.blocked_alias 정리 — 차단은 별칭 기반이므로 orphan은 무해하나, 탈퇴 시 정리 함수 고려
 - [ ] ANALYSIS_CONFIG.COOLDOWN_SECONDS DB config 테이블로 이동 (Phase E)
 - [ ] 타임존 로직 단일 함수로 통합 (Edge Function + DB RPC 양쪽에 KST 로직 산재)
 
@@ -76,10 +76,7 @@
 ## P3 — 낮음 (닦기)
 
 ### 문서
-- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 37개)
-- [ ] docs/plan/DESIGN-v2-improvements.md → docs/complete/ 이동
-- [ ] docs/plan/v2-type-refactor.md → docs/complete/ 이동 (구현 완료)
-- [ ] docs/plan/DESIGN-v3-refinement.md → docs/complete/ 이동
+- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 43개)
 
 ### 코드
 - [ ] 웹 localStorage 날짜 패턴 유틸로 추출 (배너 상태 2곳)
@@ -102,3 +99,4 @@
 | 2026-03-18 | 마이페이지 UX 폴리시: WeeklySummary 스켈레톤/빈상태, EmotionWave 키보드접근, BlockedUsers 개별isPending | — |
 | 2026-03-18 | 마이페이지 종합: 인증 안정화(SIGNED_OUT 재세션+캐시클리어), 코드품질(useQueries+getActivityLabel중앙+ErrorBoundary로깅), 디자인(문구버그+칩표준+색상통일) | — |
 | 2026-03-18 | 오늘의하루: validateDailyPostInput 활용, alert→toast 전환, ActivityTagSelector 에러처리 | — |
+| 2026-03-21 | 서비스 유지보수: 웹 admin 에러체크, 앱 useAuth 타이머 cleanup, 댓글 캐시무효화, 접근성 레이블, 알림 isPending+조건표시, audit/CLAUDE.md 갱신 | — |
