@@ -1,15 +1,15 @@
 # 중앙 레포 (supabase-hermit) 분석 스냅샷
 
-> **최종 갱신**: 2026-03-21 | **마이그레이션**: 44개 | **RPC**: 33개(public) + 14개(internal)
+> **최종 갱신**: 2026-03-21 | **마이그레이션**: 45개 | **RPC**: 35개(public) + 14개(internal)
 
 ## 통계 요약
 
 | 항목 | 수량 |
 |------|------|
-| 마이그레이션 | 44 |
+| 마이그레이션 | 45 |
 | 테이블 | 10 (groups/group_members는 migration 26에서 DROP 완료) |
 | 뷰 | 1 (posts_with_like_count) |
-| Public RPC | 33 |
+| Public RPC | 35 |
 | Internal 함수 | 14 |
 | 트리거 | 17 |
 | shared 타입 exports | 42 |
@@ -68,6 +68,7 @@
 | 42 | 20260329000004_pg_cron_setup.sql | pg_cron: stuck 분석 5분 자동 정리 |
 | 43 | 20260329000005_streak_rewards.sql | 스트릭 보상: get_my_streak RPC + 마일스톤 |
 | 44 | 20260330000001_legacy_cleanup.sql | 레거시 정리: user_blocks 인덱스 + RPC COMMENT 33개 |
+| 45 | 20260331000001_daily_v2.sql | Daily v2: 히스토리 조회 + 월간 감정 리포트 |
 
 ---
 
@@ -88,7 +89,7 @@
 
 ---
 
-## Public RPC 함수 (33개)
+## Public RPC 함수 (35개)
 
 ### CORE (2)
 - `toggle_reaction(post_id, type)` — SECURITY DEFINER + advisory lock
@@ -136,11 +137,13 @@
 - `mark_notifications_read(ids[])`
 - `mark_all_notifications_read()`
 
-### DAILY EVOLUTION (4)
+### DAILY EVOLUTION (6)
 - `get_yesterday_daily_reactions()` — 어제 daily 반응 (KST 서버 계산)
 - `get_same_mood_dailies(post_id, emotions)` — 같은 감정 daily 3개 (오늘 KST)
 - `get_weekly_emotion_summary(week_offset)` — 주간 감정 요약 (Top 5 감정, Top 활동)
 - `get_my_streak()` — daily 스트릭 (연속/총/최장 + 마일스톤 + streak freeze)
+- `get_my_daily_history(limit, offset)` — 내 daily 히스토리 (역순, 페이지네이션)
+- `get_monthly_emotion_report(year, month)` — 월간 감정/활동 리포트
 
 ### USER BLOCKS (3)
 - `block_user(alias)`

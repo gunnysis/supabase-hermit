@@ -76,7 +76,7 @@
 ## P3 — 낮음 (닦기)
 
 ### 문서
-- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 43개)
+- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 45개)
 
 ### 코드
 - [x] 웹 YesterdayReactionBanner localStorage 키 user-specific 전환 (2026-03-21)
@@ -101,3 +101,6 @@
 | 2026-03-18 | 오늘의하루: validateDailyPostInput 활용, alert→toast 전환, ActivityTagSelector 에러처리 | — |
 | 2026-03-21 | 서비스 유지보수: 웹 admin 에러체크, 앱 useAuth 타이머 cleanup, 댓글 캐시무효화, 접근성 레이블, 알림 isPending+조건표시, audit/CLAUDE.md 갱신 | — |
 | 2026-03-21 | 기술부채 해소: 웹 useRealtimeTable 공통훅(4곳), useUnreadCount Realtime 전환, 앱 React.memo(2컴포넌트), YesterdayReactionBanner user-specific key, RPC COMMENT 33개 | #44 |
+| 2026-03-21 | Daily v2: get_my_daily_history + get_monthly_emotion_report RPC, 앱/웹 DailyHistory + MonthlyReport + WeeklySummary(웹 신규) | #45 |
+| 2026-03-21 | Daily 버그 개편: 삭제 캐시 6쿼리 무효화(치명), 감정 fallback 순서, 웹 edit fallback, 앱 키보드 처리, 배너 자동 리셋 | — |
+| 2026-03-21 | 서비스 전체 개선: GestureHandlerRootView 추가, QueryClient 최적화(experimental 제거, 4xx 재시도 방지), 앱 의존성(TanStack 5.91, Supabase 2.99) | — |
