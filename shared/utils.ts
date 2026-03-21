@@ -133,6 +133,13 @@ export function processEmotionTimeline(
   }
 }
 
+/** 현재 KST 날짜 (year, month) 반환 — 서버 KST 로직과 동일 기준 */
+export function getCurrentKST(): { year: number; month: number; date: number } {
+  const now = new Date()
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return { year: kst.getUTCFullYear(), month: kst.getUTCMonth() + 1, date: kst.getUTCDate() }
+}
+
 /** 활동 ID → 아이콘 + 이름 라벨 변환 (외부 import 없는 순수 함수) */
 export function getActivityLabel(
   id: string,
