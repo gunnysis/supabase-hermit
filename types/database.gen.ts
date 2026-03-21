@@ -507,8 +507,25 @@ export type Database = {
           pct: number
         }[]
       }
+      get_monthly_emotion_report: {
+        Args: { p_year: number; p_month: number }
+        Returns: Json
+      }
       get_my_activity_summary: { Args: never; Returns: Json }
       get_my_alias: { Args: never; Returns: string }
+      get_my_daily_history: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          id: number
+          emotions: string[] | null
+          activities: string[] | null
+          content: string | null
+          created_date_kst: string
+          created_at: string
+          like_count: number
+          comment_count: number
+        }[]
+      }
       get_my_streak: { Args: never; Returns: Json }
       get_notifications: {
         Args: { p_limit?: number; p_offset?: number }

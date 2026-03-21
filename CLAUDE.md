@@ -52,7 +52,8 @@ supabase-hermit/
 │       ├── 20260329000003_side_effects_fix.sql         # soft_delete 알림 정리, daily 재작성 방어
 │       ├── 20260329000004_pg_cron_setup.sql            # pg_cron: stuck 분석 5분 자동 정리
 │       ├── 20260329000005_streak_rewards.sql           # 스트릭 보상: get_my_streak RPC + 마일스톤
-│       └── 20260330000001_legacy_cleanup.sql           # 레거시 정리: user_blocks 인덱스 + RPC COMMENT 문서화 (33개)
+│       ├── 20260330000001_legacy_cleanup.sql           # 레거시 정리: user_blocks 인덱스 + RPC COMMENT 문서화 (33개)
+│       └── 20260331000001_daily_v2.sql                # Daily v2: 히스토리 조회 + 월간 감정 리포트
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
@@ -100,7 +101,7 @@ supabase-hermit/
 ### 뷰 (1개)
 - `posts_with_like_count` — 게시글 + 좋아요수 + 댓글수 + 감정 + post_type + activities (security_invoker)
 
-### RPC 함수 (33개)
+### RPC 함수 (35개)
 | 함수 | 설명 |
 |---|---|
 | `toggle_reaction(post_id, type)` | 리액션 토글 (SECURITY DEFINER + advisory lock) |
@@ -136,6 +137,8 @@ supabase-hermit/
 | `get_same_mood_dailies(post_id, emotions)` | 같은 감정 daily 3개 (오늘 KST) |
 | `get_weekly_emotion_summary(week_offset)` | 주간 감정 요약 (Top 5 감정, Top 활동) |
 | `get_my_streak()` | daily 스트릭 (연속/총/최장 + 마일스톤 + streak freeze) |
+| `get_my_daily_history(limit, offset)` | 내 daily 히스토리 (역순, 페이지네이션) |
+| `get_monthly_emotion_report(year, month)` | 월간 감정/활동 리포트 (Top 5, 반응 수) |
 
 ### Edge Functions (앱 레포에서 관리)
 | 함수 | JWT 검증 | 설명 |
