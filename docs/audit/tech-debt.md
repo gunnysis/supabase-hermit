@@ -61,7 +61,7 @@
 - [ ] 웹 테스트 커버리지 확대 (현재 3개 → 핵심 훅/API 커버)
 - [x] useUnreadCount 30초 폴링 → Realtime 구독 전환 (2026-03-21)
 - [x] 마이페이지 섹션별 에러 바운더리 (SectionErrorBoundary, 2026-03-18)
-- [ ] 에러 바운더리 컴포넌트 추가 (전역 — 마이페이지 외 나머지)
+- [x] 에러 바운더리 컴포넌트 추가 (전역 — 5개 라우트 error.tsx + RouteError 공통 컴포넌트, 2026-03-22)
 - [ ] PostDetailView 200+ 라인 → 서브 컴포넌트 분리
 - [x] Realtime 구독 패턴 추출 (useRealtimeTable 공통 훅, 4곳 적용, 2026-03-21)
 - [x] 캐시 무효화 전략 세분화 — TanStack Query prefix 매칭으로 이미 동작 중 (2026-03-21)
