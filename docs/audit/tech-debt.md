@@ -59,17 +59,17 @@
 
 ### 웹
 - [ ] 웹 테스트 커버리지 확대 (현재 3개 → 핵심 훅/API 커버)
-- [ ] useUnreadCount 30초 폴링 → Realtime 구독 전환
+- [x] useUnreadCount 30초 폴링 → Realtime 구독 전환 (2026-03-21)
 - [x] 마이페이지 섹션별 에러 바운더리 (SectionErrorBoundary, 2026-03-18)
 - [ ] 에러 바운더리 컴포넌트 추가 (전역 — 마이페이지 외 나머지)
 - [ ] PostDetailView 200+ 라인 → 서브 컴포넌트 분리
-- [ ] Realtime 구독 패턴 추출 (useRealtimeChannel 공통 훅)
-- [ ] 캐시 무효화 전략 세분화 (`['boardPosts']` 전체 → `['boardPosts', boardId]`)
+- [x] Realtime 구독 패턴 추출 (useRealtimeTable 공통 훅, 4곳 적용, 2026-03-21)
+- [x] 캐시 무효화 전략 세분화 — TanStack Query prefix 매칭으로 이미 동작 중 (2026-03-21)
 
 ### 앱
 - [ ] 테스트 커버리지 확대 (현재 6파일/121테스트 → 핵심 API 훅 커버)
-- [ ] Realtime 채널 수 모니터링 (다수 화면 동시 구독 시 성능)
-- [ ] EmotionCalendar/EmotionWaveNative 메모이제이션 점검
+- [x] Realtime 채널 수 — 홈 1채널만 활성, 상세 진입 시 3채널 추가 (적정, 2026-03-21)
+- [x] EmotionCalendar/EmotionWaveNative React.memo 적용 (2026-03-21)
 
 ---
 
@@ -79,9 +79,9 @@
 - [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 43개)
 
 ### 코드
-- [ ] 웹 localStorage 날짜 패턴 유틸로 추출 (배너 상태 2곳)
+- [x] 웹 YesterdayReactionBanner localStorage 키 user-specific 전환 (2026-03-21)
 - [ ] 웹 낙관적 업데이트 패턴 공통화 (useComments 3x, useReactions)
-- [ ] search_posts_v2 COMMENT ON FUNCTION 추가 (v1 대체 문서화)
+- [x] search_posts_v2 COMMENT ON FUNCTION — migration 44에서 33개 RPC 일괄 문서화 (2026-03-21)
 
 ---
 
@@ -100,3 +100,4 @@
 | 2026-03-18 | 마이페이지 종합: 인증 안정화(SIGNED_OUT 재세션+캐시클리어), 코드품질(useQueries+getActivityLabel중앙+ErrorBoundary로깅), 디자인(문구버그+칩표준+색상통일) | — |
 | 2026-03-18 | 오늘의하루: validateDailyPostInput 활용, alert→toast 전환, ActivityTagSelector 에러처리 | — |
 | 2026-03-21 | 서비스 유지보수: 웹 admin 에러체크, 앱 useAuth 타이머 cleanup, 댓글 캐시무효화, 접근성 레이블, 알림 isPending+조건표시, audit/CLAUDE.md 갱신 | — |
+| 2026-03-21 | 기술부채 해소: 웹 useRealtimeTable 공통훅(4곳), useUnreadCount Realtime 전환, 앱 React.memo(2컴포넌트), YesterdayReactionBanner user-specific key, RPC COMMENT 33개 | #44 |
