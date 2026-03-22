@@ -104,3 +104,5 @@
 | 2026-03-21 | Daily v2: get_my_daily_history + get_monthly_emotion_report RPC, 앱/웹 DailyHistory + MonthlyReport + WeeklySummary(웹 신규) | #45 |
 | 2026-03-21 | Daily 버그 개편: 삭제 캐시 6쿼리 무효화(치명), 감정 fallback 순서, 웹 edit fallback, 앱 키보드 처리, 배너 자동 리셋 | — |
 | 2026-03-21 | 서비스 전체 개선: GestureHandlerRootView 추가, QueryClient 최적화(experimental 제거, 4xx 재시도 방지), 앱 의존성(TanStack 5.91, Supabase 2.99) | — |
+| 2026-03-22 | Sentry 에러 분석+해결: block_user 방어적 처리(#46), 웹 DOMPurify SSR 수정, extractErrorMessage 진단강화, blocks.ts APIError 래핑, Sentry fingerprint, 6이슈 resolved | #46 |
+| 2026-03-22 | 바텀시트 UX: DailyBottomSheet Glassmorphism+그림자+마이크로인터랙션, 배너 문구 통일, 웹 DailyPostForm 헤더날짜+칩ring | — |

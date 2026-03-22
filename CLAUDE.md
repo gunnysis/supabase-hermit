@@ -53,7 +53,8 @@ supabase-hermit/
 │       ├── 20260329000004_pg_cron_setup.sql            # pg_cron: stuck 분석 5분 자동 정리
 │       ├── 20260329000005_streak_rewards.sql           # 스트릭 보상: get_my_streak RPC + 마일스톤
 │       ├── 20260330000001_legacy_cleanup.sql           # 레거시 정리: user_blocks 인덱스 + RPC COMMENT 문서화 (33개)
-│       └── 20260331000001_daily_v2.sql                # Daily v2: 히스토리 조회 + 월간 감정 리포트
+│       ├── 20260331000001_daily_v2.sql                # Daily v2: 히스토리 조회 + 월간 감정 리포트
+│       └── 20260401000001_block_user_defensive.sql    # block_user 방어적 처리: 별칭 미존재 시 NOOP + 자기 차단 방지
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
@@ -130,7 +131,7 @@ supabase-hermit/
 | `get_unread_notification_count()` | 미읽음 알림 수 |
 | `mark_notifications_read(ids)` | 선택 알림 읽음 처리 |
 | `mark_all_notifications_read()` | 전체 알림 읽음 처리 |
-| `block_user(alias)` | 특정 별칭 차단 |
+| `block_user(alias)` | 특정 별칭 차단 (미존재 시 NOOP, 자기 차단 방지) |
 | `unblock_user(alias)` | 차단 해제 |
 | `get_blocked_aliases()` | 차단 별칭 목록 조회 |
 | `get_yesterday_daily_reactions()` | 어제 daily 반응 (KST 서버 계산) |
@@ -277,5 +278,6 @@ npm run verify        # 레포 간 정합성 검증
 - [DB 스키마 상세](docs/SCHEMA.md) — 테이블/뷰/함수/RLS/트리거/제약조건/Edge Functions 전체
 - [스크립트 사용법](docs/SCRIPTS.md) — db.sh, gen-types.sh, sync-to-projects.sh, verify.sh 상세
 - [클라이언트 아키텍처](docs/CLIENT-ARCHITECTURE.md) — 앱/웹 심리분석 흐름, 공유 코드 관리, Realtime 패턴
+- [연동 서비스 및 비용](docs/SERVICES.md) — 전체 서비스 플랜/한도/토큰/비용 관리/대응 계획
 - [감정분석 업그레이드 설계](docs/archive/DESIGN-emotion-upgrade.md) — E1-E3 단계별 업그레이드 (E1 완료, E2-E3 미착수)
-- [구현 완료 아카이브](docs/archive/) — 유지보수 v1-v3, 검색, 관리자, 감정분석, EAS 빌드 방지, 검색 동기화 등 완료된 설계 문서
+- [구현 완료 아카이브](docs/archive/) — 주제별 이력 6개 (유지보수, 검색, 감정분석, 인프라, 마이페이지+daily, 가이드)

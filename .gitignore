@@ -1,2 +1,23 @@
+# env
 .env
+
+# supabase
 supabase/.temp/
+
+# node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# debug
+*.log
+npm-debug.*
+
+# IDE
+.cursor/
+.vscode/
+
+# typescript
+*.tsbuildinfo
