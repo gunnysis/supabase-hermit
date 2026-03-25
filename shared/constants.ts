@@ -114,6 +114,18 @@ export const SEARCH_CONFIG = {
   RESULT_MAX_EMOTIONS: 2,
 } as const
 
+/** 공개 게시판 기본 ID */
+export const DEFAULT_PUBLIC_BOARD_ID = 12
+
+/** 시 게시판 ID */
+export const POETRY_BOARD_ID = 13
+
+/** 공개 게시판 목록 (피드 탭/글쓰기 선택용) */
+export const PUBLIC_BOARDS = [
+  { id: 12, name: '자유게시판', icon: '📝' },
+  { id: 13, name: '시 게시판', icon: '🪶' },
+] as const
+
 /** 관리자 관련 상수 */
 export const ADMIN_CONSTANTS = {
   BOARD_NAME_MAX_LENGTH: 100,

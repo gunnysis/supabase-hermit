@@ -32,7 +32,6 @@ export interface Post {
   like_count?: number
   emotions?: string[] | null
   initial_emotions?: string[] | null
-  image_url?: string | null
   post_type?: 'post' | 'daily'
   activities?: string[] | null
 }
@@ -137,7 +136,6 @@ export interface CreatePostRequest {
   board_id?: number | null
   is_anonymous?: boolean
   display_name?: string
-  image_url?: string | null
   initial_emotions?: string[] | null
 }
 
@@ -155,7 +153,6 @@ export interface CreateReactionRequest {
 export interface UpdatePostRequest {
   title?: string
   content?: string
-  image_url?: string | null
   initial_emotions?: string[] | null
 }
 
@@ -201,7 +198,6 @@ export interface SearchResult {
   display_name: string
   author_id: string
   is_anonymous: boolean
-  image_url: string | null
   initial_emotions: string[] | null
   title_highlight: string
   content_highlight: string
