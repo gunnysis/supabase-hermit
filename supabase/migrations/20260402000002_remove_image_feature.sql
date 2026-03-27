@@ -12,11 +12,13 @@ DROP POLICY IF EXISTS "Authenticated users can upload post images" ON storage.ob
 DROP POLICY IF EXISTS "Anyone can view post images"              ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete own post images"         ON storage.objects;
 
--- 3. posts.image_url 컬럼 제거
+-- 3. 의존 뷰 먼저 제거 (image_url 컬럼 의존)
+DROP VIEW IF EXISTS public.posts_with_like_count;
+
+-- 4. posts.image_url 컬럼 제거
 ALTER TABLE public.posts DROP COLUMN IF EXISTS image_url;
 
--- 4. posts_with_like_count 뷰 재생성 (image_url 제거)
-DROP VIEW IF EXISTS public.posts_with_like_count;
+-- 5. posts_with_like_count 뷰 재생성 (image_url 없이)
 CREATE VIEW public.posts_with_like_count
   WITH (security_invoker = true)
 AS
@@ -50,5 +52,5 @@ LEFT JOIN (
 LEFT JOIN public.post_analysis pa ON pa.post_id = p.id
 WHERE p.deleted_at IS NULL;
 
--- 5. Storage 버킷 삭제 (비어있을 때만 성공, 파일 있으면 Dashboard에서 수동 삭제)
-DELETE FROM storage.buckets WHERE id = 'post-images';
+-- 6. Storage 버킷(post-images) 삭제는 Supabase Dashboard에서 수동 처리
+-- (SQL 직접 삭제 불가: "Direct deletion from storage tables is not allowed")
