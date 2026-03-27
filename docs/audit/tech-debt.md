@@ -1,6 +1,6 @@
 # 기술부채 + 개선 백로그
 
-> **최종 갱신**: 2026-03-21
+> **최종 갱신**: 2026-03-27
 
 ## 범례
 - `[ ]` 미착수 | `[~]` 진행중 | `[x]` 완료
@@ -46,6 +46,7 @@
 ### DB
 - [x] groups/group_members 레거시 테이블 완전 DROP (migration 26에서 완료, 2026-03-19)
 - [ ] user_blocks.blocked_alias 정리 — 차단은 별칭 기반이므로 orphan은 무해하나, 탈퇴 시 정리 함수 고려
+- [ ] Storage `post-images` 버킷 삭제 — Dashboard에서 수동 삭제 필요 (SQL 직접 삭제 불가)
 - [ ] ANALYSIS_CONFIG.COOLDOWN_SECONDS DB config 테이블로 이동 (Phase E)
 - [ ] 타임존 로직 단일 함수로 통합 (Edge Function + DB RPC 양쪽에 KST 로직 산재)
 
@@ -68,6 +69,7 @@
 
 ### 앱
 - [ ] 테스트 커버리지 확대 (현재 6파일/121테스트 → 핵심 API 훅 커버)
+- [ ] ANR 개선 — Sentry에서 Background/Foreground ANR 3건 보고 (3/22~3/26, 프로파일링 필요)
 - [x] Realtime 채널 수 — 홈 1채널만 활성, 상세 진입 시 3채널 추가 (적정, 2026-03-21)
 - [x] EmotionCalendar/EmotionWaveNative React.memo 적용 (2026-03-21)
 
@@ -106,3 +108,4 @@
 | 2026-03-21 | 서비스 전체 개선: GestureHandlerRootView 추가, QueryClient 최적화(experimental 제거, 4xx 재시도 방지), 앱 의존성(TanStack 5.91, Supabase 2.99) | — |
 | 2026-03-22 | Sentry 에러 분석+해결: block_user 방어적 처리(#46), 웹 DOMPurify SSR 수정, extractErrorMessage 진단강화, blocks.ts APIError 래핑, Sentry fingerprint, 6이슈 resolved | #46 |
 | 2026-03-22 | 바텀시트 UX: DailyBottomSheet Glassmorphism+그림자+마이크로인터랙션, 배너 문구 통일, 웹 DailyPostForm 헤더날짜+칩ring | — |
+| 2026-03-27 | Sentry 일괄 수정: DB migration push(시게시판+이미지제거), 웹 DOMPurify 동적import(SSR호환), jsdom 제거, 앱 extractErrorMessage 확장+핑거프린트 개선, 14이슈 resolved | #47-48 |
