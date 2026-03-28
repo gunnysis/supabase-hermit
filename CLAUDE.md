@@ -56,7 +56,8 @@ supabase-hermit/
 │       ├── 20260331000001_daily_v2.sql                # Daily v2: 히스토리 조회 + 월간 감정 리포트
 │       ├── 20260401000001_block_user_defensive.sql    # block_user 방어적 처리: 별칭 미존재 시 NOOP + 자기 차단 방지
 │       ├── 20260402000001_poetry_board.sql            # 시 게시판 추가 (board_id=13, always_anon)
-│       └── 20260402000002_remove_image_feature.sql    # 이미지 기능 제거: image_url DROP, Storage 정책 제거, 뷰 재생성
+│       ├── 20260402000002_remove_image_feature.sql    # 이미지 기능 제거: image_url DROP, Storage 정책 제거, 뷰 재생성
+│       └── 20260403000001_remove_poetry_board.sql     # 시 게시판 제거: 게시글 자유게시판 이관 + board 삭제
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)
@@ -90,7 +91,7 @@ supabase-hermit/
 ### 테이블 (10개)
 | 테이블 | 설명 |
 |---|---|
-| `boards` | 게시판 (id=1,2,12,13; 익명모드 설정) |
+| `boards` | 게시판 (id=1,2,12; 익명모드 설정) |
 | `posts` | 게시글 (소프트삭제, 자동 감정분석, initial_emotions, post_type: post/daily, activities, **created_date_kst** generated) |
 | `comments` | 댓글 (소프트삭제, **parent_id로 1단계 답글**) |
 | `reactions` | 리액션 집계 (post_id + reaction_type 별 count) |

@@ -109,3 +109,9 @@
 | 2026-03-22 | Sentry 에러 분석+해결: block_user 방어적 처리(#46), 웹 DOMPurify SSR 수정, extractErrorMessage 진단강화, blocks.ts APIError 래핑, Sentry fingerprint, 6이슈 resolved | #46 |
 | 2026-03-22 | 바텀시트 UX: DailyBottomSheet Glassmorphism+그림자+마이크로인터랙션, 배너 문구 통일, 웹 DailyPostForm 헤더날짜+칩ring | — |
 | 2026-03-27 | Sentry 일괄 수정: DB migration push(시게시판+이미지제거), 웹 DOMPurify 동적import(SSR호환), jsdom 제거, 앱 extractErrorMessage 확장+핑거프린트 개선, 14이슈 resolved | #47-48 |
+| 2026-03-28 | 시 게시판 제거: board_id=13 삭제, 게시글 자유게시판 이관, 앱/웹 poem 탭·분기 코드 정리, 게시판 탭 UI 제거(단일 게시판) | #49 |
+| 2026-03-28 | 글 작성 UX 개선: 웹 임시저장(useDraft+localStorage), 앱/웹 저장 상태 표시(DraftStatus) | — |
+| 2026-03-28 | 에디터 개선 Phase 1: 웹 밑줄+링크+텍스트정렬(3 Tiptap 확장), 앱 글자수 HTML→텍스트 수정 | — |
+| 2026-03-28 | 에디터 개선 Phase 2: 웹 정렬 SVG 아이콘+링크 SVG, 앱/웹 제목 카운터(00/100), 앱 maxHeight 400→600+프로그레스바+읽기시간, 웹 읽기시간 | — |
+| 2026-03-28 | 글 작성 여정 개선: 웹 모바일 pb-24, 웹 beforeunload(작성+수정), 앱 작성 후 상세 이동, 에러 메시지 네트워크 구분 | — |
+| 2026-03-28 | 유지보수 점검: 앱 HTML엔티티 카운트 수정, draft status 3초 리셋(앱/웹), EditForm formState.isDirty 활용, Suspense fallback, 에러감지 대소문자 | — |
