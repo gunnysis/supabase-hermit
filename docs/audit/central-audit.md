@@ -1,12 +1,12 @@
 # 중앙 레포 (supabase-hermit) 분석 스냅샷
 
-> **최종 갱신**: 2026-03-21 | **마이그레이션**: 45개 | **RPC**: 35개(public) + 14개(internal)
+> **최종 갱신**: 2026-03-28 | **마이그레이션**: 51개 | **RPC**: 35개(public) + 14개(internal)
 
 ## 통계 요약
 
 | 항목 | 수량 |
 |------|------|
-| 마이그레이션 | 45 |
+| 마이그레이션 | 51 |
 | 테이블 | 10 (groups/group_members는 migration 26에서 DROP 완료) |
 | 뷰 | 1 (posts_with_like_count) |
 | Public RPC | 35 |
@@ -20,7 +20,7 @@
 
 ---
 
-## 마이그레이션 목록 (37개)
+## 마이그레이션 목록 (51개, #46~51은 아래 추가)
 
 | # | 파일 | 핵심 내용 |
 |---|------|----------|
@@ -69,6 +69,12 @@
 | 43 | 20260329000005_streak_rewards.sql | 스트릭 보상: get_my_streak RPC + 마일스톤 |
 | 44 | 20260330000001_legacy_cleanup.sql | 레거시 정리: user_blocks 인덱스 + RPC COMMENT 33개 |
 | 45 | 20260331000001_daily_v2.sql | Daily v2: 히스토리 조회 + 월간 감정 리포트 |
+| 46 | 20260401000001_block_user_defensive.sql | block_user 방어적 처리 (별칭 미존재 NOOP + 자기 차단 방지) |
+| 47 | 20260402000001_poetry_board.sql | 시 게시판 추가 (board_id=13, always_anon) |
+| 48 | 20260402000002_remove_image_feature.sql | 이미지 기능 제거: image_url DROP, Storage 정책 제거, 뷰 재생성 |
+| 49 | 20260403000001_remove_poetry_board.sql | 시 게시판 제거: 게시글 자유게시판 이관 + board 삭제 |
+| 50 | 20260404000001_lint_fixes.sql | lint 수정: search_posts_v2 image_url 제거, admin_cleanup author_id |
+| 51 | 20260404000002_lint_fixes_2.sql | lint 수정: get_my_streak STABLE→VOLATILE |
 
 ---
 

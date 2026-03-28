@@ -57,7 +57,9 @@ supabase-hermit/
 │       ├── 20260401000001_block_user_defensive.sql    # block_user 방어적 처리: 별칭 미존재 시 NOOP + 자기 차단 방지
 │       ├── 20260402000001_poetry_board.sql            # 시 게시판 추가 (board_id=13, always_anon)
 │       ├── 20260402000002_remove_image_feature.sql    # 이미지 기능 제거: image_url DROP, Storage 정책 제거, 뷰 재생성
-│       └── 20260403000001_remove_poetry_board.sql     # 시 게시판 제거: 게시글 자유게시판 이관 + board 삭제
+│       ├── 20260403000001_remove_poetry_board.sql     # 시 게시판 제거: 게시글 자유게시판 이관 + board 삭제
+│       ├── 20260404000001_lint_fixes.sql              # lint 수정: search_posts_v2 image_url 제거, admin_cleanup author_id
+│       └── 20260404000002_lint_fixes_2.sql            # lint 수정: get_my_streak STABLE→VOLATILE
 ├── shared/
 │   ├── constants.ts                # 공유 상수 (ALLOWED_EMOTIONS, EMOTION_EMOJI, SEARCH_SORT_OPTIONS, SEARCH_CONFIG, ANALYSIS_STATUS/CONFIG, VALIDATION, MOTION, ACTIVITY_PRESETS, DAILY_CONFIG, DAILY_INSIGHTS_CONFIG 등)
 │   ├── types.ts                    # 공유 비즈니스 타입 (Post, Comment, Notification, UserBlock, ActivitySummary 등)

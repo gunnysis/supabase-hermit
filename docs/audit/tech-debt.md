@@ -1,6 +1,6 @@
 # 기술부채 + 개선 백로그
 
-> **최종 갱신**: 2026-03-27
+> **최종 갱신**: 2026-03-28
 
 ## 범례
 - `[ ]` 미착수 | `[~]` 진행중 | `[x]` 완료
@@ -36,7 +36,7 @@
 - [x] 앱 PostBody RenderHTML `<pre>` 커스텀 렌더러 (수평 ScrollView) + blockquote overflow hidden
 - [x] 앱 PostCard/PostDetailBody/CommentItem display_name `truncate` + `flex-shrink` + `max-w-[60%]`
 - [x] 앱 CommentItem 답글 들여쓰기 ml-8→ml-6
-- [x] 앱 ContentEditor maxHeight 400
+- [x] 앱 ContentEditor maxHeight 600 (400→600 확대, 2026-03-28)
 - [x] 웹 PostCard/CommentItem display_name `truncate` + `max-w-[60%]`
 
 ---
@@ -78,7 +78,7 @@
 ## P3 — 낮음 (닦기)
 
 ### 문서
-- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 45개)
+- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 51개)
 
 ### 코드
 - [x] 웹 YesterdayReactionBanner localStorage 키 user-specific 전환 (2026-03-21)
@@ -115,3 +115,4 @@
 | 2026-03-28 | 에디터 개선 Phase 2: 웹 정렬 SVG 아이콘+링크 SVG, 앱/웹 제목 카운터(00/100), 앱 maxHeight 400→600+프로그레스바+읽기시간, 웹 읽기시간 | — |
 | 2026-03-28 | 글 작성 여정 개선: 웹 모바일 pb-24, 웹 beforeunload(작성+수정), 앱 작성 후 상세 이동, 에러 메시지 네트워크 구분 | — |
 | 2026-03-28 | 유지보수 점검: 앱 HTML엔티티 카운트 수정, draft status 3초 리셋(앱/웹), EditForm formState.isDirty 활용, Suspense fallback, 에러감지 대소문자 | — |
+| 2026-03-28 | DB lint 수정: search_posts_v2 image_url 제거(DROP+재생성), admin_cleanup author_id, get_my_streak STABLE→VOLATILE | #50-51 |
