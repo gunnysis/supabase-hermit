@@ -116,3 +116,5 @@
 | 2026-03-28 | 글 작성 여정 개선: 웹 모바일 pb-24, 웹 beforeunload(작성+수정), 앱 작성 후 상세 이동, 에러 메시지 네트워크 구분 | — |
 | 2026-03-28 | 유지보수 점검: 앱 HTML엔티티 카운트 수정, draft status 3초 리셋(앱/웹), EditForm formState.isDirty 활용, Suspense fallback, 에러감지 대소문자 | — |
 | 2026-03-28 | DB lint 수정: search_posts_v2 image_url 제거(DROP+재생성), admin_cleanup author_id, get_my_streak STABLE→VOLATILE | #50-51 |
+| 2026-03-28 | 성능: 앱 Realtime invalidate전환, FlashList estimatedItemSize, renderItem 추출, search pagination O(1), 웹 PostCard memo+useMemo | — |
+| 2026-03-28 | 품질: 웹 PublicFeed 재시도버튼, PostCard 키보드접근, EmotionFilterBar aria-label, CreatePostForm label, 앱 emoji fallback, NetInfo catch | — |
