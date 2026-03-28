@@ -236,6 +236,38 @@ npm run verify        # 레포 간 정합성 검증
 - **감정 칩 표준 스타일** — 모든 인터랙티브 감정 칩은 `rounded-full px-3 py-1.5 text-xs` 통일. 활성: `EMOTION_COLOR_MAP[emotion].gradient[0]` bg + `font-semibold`, 비활성: 앱 `bg-stone-100 dark:bg-stone-800` / 웹 `bg-muted`. 새 감정 칩 UI 추가 시 이 표준을 따를 것
 - **오늘의 하루 (daily post)** — `posts` 테이블의 `post_type='daily'` 경량 게시글. 같은 피드에 표시, 같은 리액션/댓글/Realtime/RLS. 감정분석 트리거는 `post_type='post'`만 발동. daily는 `create_daily_post()` RPC로 post_analysis 직접 생성 (AI skip). 활동 태그는 `ACTIVITY_PRESETS` 상수 기반. 설계: `docs/plan/baj/DESIGN.md`
 
+## 배포 절차 (필수 게이트)
+
+### 사전 점검 (배포 전 반드시 순서대로)
+1. `bash scripts/db.sh lint` — DB 스키마 에러 확인
+2. 웹: `npx tsc --noEmit` — 타입 체크 통과
+3. 앱: pre-commit 훅 (tsc + eslint + prettier + jest) 통과
+4. `bash scripts/verify.sh` — 3레포 정합성 확인
+5. 앱 스토어 배포 시: `app.config.js`의 `NATIVE_VERSION` 올리기 → 커밋
+
+### 배포 실행
+- **DB**: `bash scripts/db.sh push` (자동으로 gen-types → sync → verify)
+- **웹**: `git push` 후 반드시 `vercel --prod` 수동 배포 (자동 배포 Canceled 빈번)
+- **앱 EAS Build**: 사용자 요청 시에만 실행
+  - 먼저 `eas build:list --platform android --status in-progress` 확인
+  - 진행 중인 빌드 있으면 `eas build:cancel <id>` 후 재실행
+  - `eas build --platform android --profile production`
+  - 빌드 완료 후 `eas submit --platform android --profile production --latest`
+  - `serviceAccountKeyPath`: `./.key/apps-2182e-4cfe31bef56b.json` (로컬 파일)
+- **Edge Functions**: `--no-verify-jwt` 필수
+
+### 에러 발생 시 원칙
+- **같은 명령 3번 반복 금지** — 2번 실패하면 멈추고 원인 분석 → 다른 방법 시도
+- **재시도 전 기존 작업 취소** — 빌드/배포 중복 실행 금지
+- **가용 자원 모두 활용** — WSL, 로컬 PC, 대시보드(Vercel/EAS/Supabase) 등
+
+## 에러 진단 프로토콜
+
+에러 보고 시 **코드 분석 전에 반드시**:
+1. 실제 에러 메시지/스크린샷 먼저 확보
+2. 배포 상태 확인 (코드 문제가 아닌 배포 누락일 수 있음)
+3. 확인된 원인만 타겟 수정 — 추측 기반 대규모 리팩토링 금지
+
 ## Claude 역할
 
 - **웹/앱/중앙 3개 프로젝트의 개발 실무자이자 책임자** — 전권 위임
