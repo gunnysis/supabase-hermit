@@ -1,7 +1,7 @@
 # DB 스키마 문서 — 은둔마을
 
-> 최종 업데이트: 2026-03-22
-> 마이그레이션 45개 적용 완료 | RPC 35개 | Internal 14개
+> 최종 업데이트: 2026-03-28
+> 마이그레이션 51개 적용 완료 | RPC 35개 | Internal 14개
 
 ---
 
@@ -37,10 +37,10 @@
 | `board_id` | BIGINT | FK -> boards, ON DELETE SET NULL | 게시판 |
 | `is_anonymous` | BOOLEAN | `true` | 익명 여부 |
 | `display_name` | TEXT | `'익명'` | 표시 이름 |
-| `image_url` | TEXT | nullable | 첨부 이미지 URL |
 | `initial_emotions` | TEXT[] | `NULL` | 글쓰기 시 사용자가 선택한 감정 (AI 분석 힌트) |
 | `post_type` | TEXT | `'post'` | 게시글 유형: `post` (일반), `daily` (오늘의 하루) |
-| `activities` | TEXT[] | `NULL` | 활동 태그 (daily 전용, ACTIVITY_PRESETS 기반) |
+| `activities` | TEXT[] | `'{}'` | 활동 태그 (daily 전용, ACTIVITY_PRESETS 기반) |
+| `created_date_kst` | DATE | generated | KST 날짜 (`kst_date(created_at)` stored) |
 | `created_at` | TIMESTAMPTZ | `now()` | |
 | `updated_at` | TIMESTAMPTZ | `now()` | 자동 갱신 (트리거) |
 | `deleted_at` | TIMESTAMPTZ | nullable | 소프트삭제 시각 |

@@ -78,7 +78,7 @@
 ## P3 — 낮음 (닦기)
 
 ### 문서
-- [ ] SCHEMA.md v2/v3 RPC 섹션 업데이트 (현재 헤더에 "마이그레이션 27개" → 51개)
+- [x] SCHEMA.md 갱신: 마이그레이션 51개, image_url 제거, created_date_kst 추가 (2026-03-28)
 
 ### 코드
 - [x] 웹 YesterdayReactionBanner localStorage 키 user-specific 전환 (2026-03-21)
