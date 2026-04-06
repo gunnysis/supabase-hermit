@@ -1,9 +1,9 @@
 # Claude 메모리 백업
 
-> 자동 생성: 2026-03-29 02:58:34
+> 자동 생성: 2026-04-01 06:29:49
 > 소스: `~/.claude/projects/-home-gunny-apps-supabase-hermit/memory/`
-> 파일 수: 28개
-> 체크섬: `922de795a95c7503a44b0c07d714a67e`
+> 파일 수: 29개
+> 체크섬: `effb516f59e00516bbe4b6fb85598f9d`
 
 ---
 
@@ -13,6 +13,9 @@
 # 은둔마을 Supabase 중앙 프로젝트 메모리
 
 > 정리일: 2026-03-22 | 파일 14개 | 백업: `docs/reference/memory-backup-latest.md` (자동)
+
+## 사용자
+- [user_profile.md](user_profile.md) — 무직 솔로 개발자, 대인기피/공황, 월 50만원 수익 목표, 새 서비스 기획 중
 
 ## 서비스 전략
 | 파일 | 핵심 |
@@ -24,6 +27,7 @@
 | [project_poetry_board_removal.md](project_poetry_board_removal.md) | 시 게시판 추가 1주 만에 제거 — 기능 과잉 사례, 서비스 정체성 판단 |
 | [project_writing_experience.md](project_writing_experience.md) | 글 작성 UX 개선: 웹 임시저장 + 저장 상태 표시 (A안 감정선택/B안 프롬프트는 제거) |
 | [project_editor_improvement.md](project_editor_improvement.md) | 에디터 2단계 개선: 웹 밑줄/링크/정렬+SVG아이콘, 앱 글자수수정/높이확대/프로그레스바, 읽기시간, 제목카운터 |
+| [project_new_service_plan.md](project_new_service_plan.md) | 수익화: 인프런 텍스트 강의 (Supabase 풀스택) — velog 글 → 인프런 오픈, 월 50만원 목표 |
 
 ## 프로젝트 핵심
 - 앱(Expo SDK 55) + 웹(Next.js 16) + 중앙(Supabase) 3개 레포
@@ -799,6 +803,29 @@ type: project
 - 웹 PostContent에 `style` attr 허용 추가 (text-align 렌더링)
 - 앱 PostBody는 기존에 `<u>`, inline style, `<a>` 모두 지원 — 변경 불필요
 - 향후 고려: 앱에도 Link/Underline/TextAlign 커스텀 도구 추가 (TenTap custom toolbar)
+```
+
+---
+
+## project_new_service_plan.md
+
+```markdown
+---
+name: 새 서비스 수익화 계획
+description: 인프런 텍스트 강의 (Supabase 풀스택) — 블로그 글로 강의하는 방향 확정
+type: project
+---
+
+2026-04-01 새 수익 서비스 방향 논의 결과:
+
+- 은둔마을은 유지하되 별도 수익 서비스 기획
+- 여러 방향 검토 후 **인프런 텍스트 기반 강의**로 방향 확정
+- 주제: "Supabase로 실전 풀스택 앱 만들기" (은둔마을 경험 기반)
+- 실행 계획: velog 무료 글 → 반응 확인 → 인프런 강의 오픈
+- 수익 목표: 월 50만원 이상 (55,000원 x 15명/월)
+
+**Why:** 대인기피/공황으로 대면 불가, 영상 없이 텍스트만으로 강의 가능, 문서화 능력 상위 5%, 한국어 Supabase 심화 강의 부재
+**How to apply:** 사용자가 강의 관련 작업 요청 시 이 맥락 활용. 커리큘럼 초안은 대화에서 이미 제시함 (1부 설계 / 2부 구현 / 3부 운영 / 4부 배포)
 ```
 
 ---
